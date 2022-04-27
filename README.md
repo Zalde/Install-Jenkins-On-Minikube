@@ -84,4 +84,4 @@ $ kubectl los pod_name
 ---
 OPEN YOUR BROWSER
 
-`$ minikube_ip:random_port` - The default node port range for Kubernetes is 30000 - 32767
+`$ minikube_ip:random_port_from_service` - The default node port range for Kubernetes is 30000 - 32767
