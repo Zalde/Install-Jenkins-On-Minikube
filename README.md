@@ -79,7 +79,7 @@ $ kubectl get service
 ---
 GET ADMIN PASSWORD
 ```
-$ kubectl los pod_name
+$ kubectl logs pod_name
 ```
 ---
 OPEN YOUR BROWSER
