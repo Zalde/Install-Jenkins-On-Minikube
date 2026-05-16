@@ -1,10 +1,46 @@
+# ============================================================
+# JENKINS ON MINIKUBE - Setup
+# Recursos: Namespace, ServiceAccount, PVC, Service
+# ============================================================
+
 apiVersion: v1
 kind: Namespace
 metadata:
   name: jenkins
   labels:
     name: jenkins
+
 ---
+
+# ServiceAccount dedicado para Jenkins
+# Buena práctica: nunca usar el default ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: jenkins
+
+---
+
+# PersistentVolumeClaim para Jenkins Home
+# Reemplaza emptyDir: los datos sobreviven reinicios del pod
+# En Minikube el StorageClass "standard" se crea automáticamente
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-pvc
+  namespace: jenkins
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: standard  # Descomentar si Minikube no lo detecta automáticamente
+
+---
+
+# Service NodePort: permite acceder desde el host via minikube ip + nodePort
 apiVersion: v1
 kind: Service
 metadata:
@@ -13,7 +49,13 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 8080
-    targetPort: 8080
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 32000   # Puerto fijo para facilitar el acceso en labs
+    - name: agent
+      port: 50000
+      targetPort: 50000 # Puerto JNLP para conexión de agentes Jenkins
+      nodePort: 32001
   selector:
     app: jenkins

@@ -1,3 +1,7 @@
+# ============================================================
+# JENKINS ON MINIKUBE - Deployment
+# ============================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,14 +17,71 @@ spec:
       labels:
         app: jenkins
     spec:
+      # ServiceAccount dedicado (definido en jenkins-setup-k8s.yaml)
+      serviceAccountName: jenkins
+
+      # SecurityContext a nivel Pod:
+      # - runAsNonRoot: el contenedor no puede correr como root
+      # - fsGroup: el volumen montado tendrá este GID (jenkins user en la imagen oficial)
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+
       containers:
-      - name: jenkins
-        image: jenkins/jenkins:lts-jdk11
-        ports:
-        - containerPort: 8080
-        volumeMounts:
-        - name: jenkins-home
-          mountPath: /var/jenkins_home
+        - name: jenkins
+          # Tag fijo con versión explícita + JDK21 (LTS 2026)
+          # Evitar tags flotantes como "lts" en cualquier entorno
+          image: jenkins/jenkins:2.504-jdk21
+
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: agent
+              containerPort: 50000
+
+          # SecurityContext a nivel contenedor:
+          # - runAsUser: UID del usuario "jenkins" dentro de la imagen oficial
+          # - allowPrivilegeEscalation: previene escalada de privilegios
+          securityContext:
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+
+          # Límites de recursos: importante practicar esto desde el inicio
+          # Requests: lo que Kubernetes reserva en el nodo
+          # Limits:   el máximo que puede consumir el contenedor
+          resources:
+            requests:
+              cpu: "500m"      # 0.5 vCPU
+              memory: "512Mi"
+            limits:
+              cpu: "1"         # 1 vCPU máximo
+              memory: "1Gi"    # Ajustar si se instalan muchos plugins
+
+          # ReadinessProbe: Kubernetes no enviará tráfico hasta que esto responda OK
+          # initialDelaySeconds alto porque Jenkins tarda en iniciar
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 5
+
+          # LivenessProbe: Kubernetes reiniciará el pod si Jenkins deja de responder
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            failureThreshold: 5
+
+          volumeMounts:
+            - name: jenkins-home
+              mountPath: /var/jenkins_home
+
       volumes:
-      - name: jenkins-home
-        emptyDir: { }
+        - name: jenkins-home
+          # PVC persistente: los jobs, plugins y config sobreviven reinicios del pod
+          persistentVolumeClaim:
+            claimName: jenkins-pvc
