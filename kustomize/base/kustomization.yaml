@@ -1,0 +1,30 @@
+# Base kustomization for Jenkins on Minikube
+# Contains common resources used by all environments
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace for all resources
+namespace: jenkins
+
+# Resources to include
+resources:
+  - ../../jenkins-setup-k8s.yaml
+  - ../../deployment.yaml
+  - ../../jcasc/configmap.yaml
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: jenkins
+  app.kubernetes.io/version: "2.504"
+  app.kubernetes.io/managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  documentation: "https://github.com/Zalde/Install-Jenkins-On-Minikube"
+
+# Images configuration
+images:
+  - name: jenkins/jenkins
+    newName: jenkins/jenkins
+    newTag: 2.504-jdk21

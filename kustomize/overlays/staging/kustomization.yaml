@@ -1,0 +1,58 @@
+# Staging environment overlay
+# - Single replica
+# - Moderate resource limits
+# - Production-like configuration
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base configuration
+bases:
+  - ../../base
+
+# Environment-specific labels
+commonLabels:
+  environment: staging
+
+# Environment-specific annotations
+commonAnnotations:
+  environment: staging
+  description: "Staging environment - production-like testing"
+
+# Patches for staging environment
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: jenkins
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "500m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "512Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "1Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/initialDelaySeconds
+        value: 45
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
+        value: 90
+
+# ConfigMap for staging-specific config
+configMapGenerator:
+  - name: jenkins-casc-config-staging
+    behavior: merge
+    literals:
+      - JENKINS_ENV=staging
+      - LOG_LEVEL=INFO

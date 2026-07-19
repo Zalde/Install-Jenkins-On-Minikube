@@ -1,0 +1,75 @@
+# Production environment overlay
+# - Multiple replicas (if applicable)
+# - Higher resource limits
+# - Enhanced security and monitoring
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base configuration
+bases:
+  - ../../base
+
+# Environment-specific labels
+commonLabels:
+  environment: prod
+
+# Environment-specific annotations
+commonAnnotations:
+  environment: production
+  description: "Production environment"
+  backup: "enabled"
+  monitoring: "enabled"
+
+# Patches for production environment
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: jenkins
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "1"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "1Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "2"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "2Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/initialDelaySeconds
+        value: 60
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
+        value: 120
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - jenkins
+                  topologyKey: kubernetes.io/hostname
+
+# ConfigMap for production-specific config
+configMapGenerator:
+  - name: jenkins-casc-config-prod
+    behavior: merge
+    literals:
+      - JENKINS_ENV=production
+      - LOG_LEVEL=WARN
+      - BACKUP_ENABLED=true

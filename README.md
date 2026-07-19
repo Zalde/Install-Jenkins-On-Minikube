@@ -31,21 +31,32 @@ Orientada a entrenamiento y laboratorios.
 
 ## Instalación Rápida (Recomendado)
 
-Usa los scripts de automatización para instalar todo en un comando:
+### Opción 1: Setup Simple
+Para instalación rápida con valores por defecto:
 
 ```bash
 ./scripts/setup.sh
 ```
 
-Este script automáticamente:
-1. ✅ Verifica que minikube y kubectl estén instalados
-2. ✅ Inicia Minikube
-3. ✅ Crea Namespace, ServiceAccount, PVC y Service
-4. ✅ Crea el Deployment
-5. ✅ Espera a que Jenkins esté listo
-6. ✅ Muestra la URL de acceso
+### Opción 2: Con Kustomize (Recomendado para múltiples ambientes)
+Para desplegar con configuración específica por ambiente:
 
-Después de ejecutar:
+```bash
+# Development
+./scripts/deploy-env.sh dev
+
+# Staging
+./scripts/deploy-env.sh staging
+
+# Production
+./scripts/deploy-env.sh prod
+```
+
+> 💡 Kustomize permite manejar dev/staging/prod sin duplicar YAML. Ver [`kustomize/README.md`](kustomize/README.md)
+
+### Obtener Credenciales
+
+Después de cualquier instalación:
 
 ```bash
 ./scripts/get-admin-password.sh
@@ -117,6 +128,43 @@ http://<minikube_ip>:32000
 
 ---
 
+## Kustomize - Múltiples Ambientes
+
+**Kustomize** permite mantener una configuración base común y aplicar variaciones por ambiente (dev/staging/prod) sin duplicar YAML:
+
+```
+kustomize/
+├── base/               # Configuración común para todos los ambientes
+└── overlays/           # Variaciones específicas por ambiente
+    ├── dev/            # Desarrollo: recursos bajos, logs DEBUG
+    ├── staging/        # Staging: config similar a producción
+    └── prod/           # Producción: recursos altos, logs WARN
+```
+
+### Desplegar por Ambiente
+
+```bash
+# Development (para aprender/testear)
+./scripts/deploy-env.sh dev
+
+# Staging (pre-producción)
+./scripts/deploy-env.sh staging
+
+# Production
+./scripts/deploy-env.sh prod
+```
+
+### Ver Configuración Generada
+
+```bash
+# Sin aplicar cambios (dry-run)
+kubectl kustomize kustomize/overlays/dev
+```
+
+Para más detalles: [`kustomize/README.md`](kustomize/README.md)
+
+---
+
 ## Jenkins Configuration as Code (JCasC)
 
 La configuración de Jenkins se puede gestionar completamente via YAML, permitiendo:
@@ -177,14 +225,31 @@ Para más detalles: [`jcasc/README.md`](jcasc/README.md)
 ### Usando Scripts (Recomendado)
 
 ```bash
-# Instalación completa
+# Instalación simple
 ./scripts/setup.sh
+
+# O con Kustomize (ambiente-específico)
+./scripts/deploy-env.sh dev      # Development
+./scripts/deploy-env.sh staging  # Staging
+./scripts/deploy-env.sh prod     # Production
 
 # Obtener contraseña de admin
 ./scripts/get-admin-password.sh
 
 # Limpiar todo (elimina namespace y datos)
 ./scripts/cleanup.sh
+```
+
+### Comandos Kustomize
+
+```bash
+# Ver YAML generado (sin aplicar)
+kubectl kustomize kustomize/overlays/dev
+kubectl kustomize kustomize/overlays/staging
+kubectl kustomize kustomize/overlays/prod
+
+# Aplicar directamente
+kubectl apply -k kustomize/overlays/dev
 ```
 
 ### Comandos kubectl directos
