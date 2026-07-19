@@ -1,0 +1,62 @@
+# ============================================================
+# Jenkins Configuration as Code (JCasC) ConfigMap
+# ============================================================
+# This ConfigMap contains the Jenkins configuration in YAML format
+# and is mounted as /var/jenkins_home/casc_configs/jenkins.yaml
+# Jenkins reads this automatically via the CASC_JENKINS_CONFIG environment variable
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-casc-config
+  namespace: jenkins
+data:
+  jenkins.yaml: |
+    jenkins:
+      systemMessage: "Welcome to Jenkins on Kubernetes!"
+      securityRealm:
+        # Using Jenkins' built-in user database (default)
+        local:
+          allowsSignup: false
+      authorizationStrategy:
+        # Simple authorization: admin has all permissions, authenticated users have read-only
+        projectMatrix:
+          permissions:
+            - "Overall/Administer:admin"
+            - "Overall/Read:authenticated"
+      crumbIssuer:
+        standard:
+          excludeClientIPFromCrumb: true
+      remotingSecurity:
+        enabled: true
+      slaveAgentPort: 50000
+
+    unclassified:
+      location:
+        url: "http://jenkins:8080/"
+      mailer:
+        # Configure SMTP for email notifications (optional)
+        # smtp:
+        #   host: "smtp.example.com"
+        #   port: 587
+        #   replyToAddress: "jenkins@example.com"
+        charset: "UTF-8"
+
+    # Global pipeline configuration
+    credentials:
+      system:
+        domainCredentials:
+          - credentials:
+              - plaintext:
+                  id: "example-secret"
+                  secret: "${EXAMPLE_SECRET:-changeme}"
+                  description: "Example secret (set via environment variable)"
+
+    # Security related configurations
+    security:
+      apiToken:
+        creationOfLegacyTokenEnabled: false
+      scriptApproval:
+        # Auto-approve scripts (use with caution in production)
+        aclApproved:
+          - "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object"

@@ -1,0 +1,65 @@
+jenkins:
+  systemMessage: "Welcome to Jenkins on Kubernetes!"
+  securityRealm:
+    saml:
+      # For testing, using Jenkins' built-in user database (default if not configured)
+  authorizationStrategy:
+    projectMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+        - "Overall/Read:authenticated"
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: true
+  remotingSecurity:
+    enabled: true
+  slaveAgentPort: 50000
+
+unclassified:
+  location:
+    url: "http://jenkins.local:8080/"
+
+# Plugins to be auto-installed (requires Jenkins installation-manager to be available)
+# This is optional and depends on your Jenkins image configuration
+pluginManager:
+  configFileProviderPlugins:
+    - "pipeline-stage-view"
+    - "workflow-aggregator"
+    - "git"
+    - "github"
+
+# Example: Create a simple job using Job DSL (optional)
+jobs:
+  - script: >
+      pipelineJob('example-pipeline') {
+        description('Example pipeline job created via JCasC')
+        triggers {
+          githubPush()
+        }
+        definition {
+          cps {
+            script('''
+              pipeline {
+                agent any
+                stages {
+                  stage('Hello') {
+                    steps {
+                      echo 'Hello from Jenkins on Kubernetes!'
+                    }
+                  }
+                  stage('Info') {
+                    steps {
+                      sh '''
+                        echo "Jenkins Version: ${JENKINS_VERSION}"
+                        echo "Java Version: $(java -version 2>&1)"
+                        echo "Kubernetes Host: ${KUBERNETES_SERVICE_HOST}"
+                      '''
+                    }
+                  }
+                }
+              }
+            '''.stripIndent())
+            sandbox(true)
+          }
+        }
+      }
