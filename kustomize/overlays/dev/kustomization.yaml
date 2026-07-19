@@ -49,6 +49,10 @@ patchesJson6902:
         path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
         value: 60
 
+# Patches for Ingress
+patchesStrategicMerge:
+  - ingress-patch.yaml
+
 # ConfigMap for dev-specific JCasC config
 configMapGenerator:
   - name: jenkins-casc-config-dev

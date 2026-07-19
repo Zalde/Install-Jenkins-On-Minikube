@@ -65,6 +65,10 @@ patchesJson6902:
                           - jenkins
                   topologyKey: kubernetes.io/hostname
 
+# Patches for Ingress
+patchesStrategicMerge:
+  - ingress-patch.yaml
+
 # ConfigMap for production-specific config
 configMapGenerator:
   - name: jenkins-casc-config-prod

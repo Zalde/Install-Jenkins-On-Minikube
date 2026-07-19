@@ -36,23 +36,23 @@ Para instalación rápida con valores por defecto:
 
 ```bash
 ./scripts/setup.sh
+# Acceder: http://<minikube_ip>:32000
 ```
 
-### Opción 2: Con Kustomize (Recomendado para múltiples ambientes)
-Para desplegar con configuración específica por ambiente:
+### Opción 2: Con Kustomize + Ingress (Recomendado)
+Para desplegar con Ingress y configuración por ambiente:
 
 ```bash
-# Development
-./scripts/deploy-env.sh dev
+# 1. Setup Ingress (una sola vez)
+./scripts/setup-ingress.sh
 
-# Staging
-./scripts/deploy-env.sh staging
-
-# Production
-./scripts/deploy-env.sh prod
+# 2. Desplegar en el ambiente deseado
+./scripts/deploy-env.sh dev        # http://jenkins-dev.local
+./scripts/deploy-env.sh staging    # https://jenkins-staging.local
+./scripts/deploy-env.sh prod       # https://jenkins.local
 ```
 
-> 💡 Kustomize permite manejar dev/staging/prod sin duplicar YAML. Ver [`kustomize/README.md`](kustomize/README.md)
+> 💡 Ingress permite acceso via hostnames profesionales. Ver [`ingress/README.md`](ingress/README.md)
 
 ### Obtener Credenciales
 
@@ -125,6 +125,31 @@ http://<minikube_ip>:32000
 ```bash
 ./scripts/get-admin-password.sh
 ```
+
+---
+
+## Ingress - Acceso HTTP/HTTPS
+
+**Ingress** proporciona acceso profesional a Jenkins via hostnames en lugar de IP:puerto:
+
+- 🌐 **Hostnames**: `jenkins-dev.local`, `jenkins-staging.local`, `jenkins.local`
+- 🔒 **HTTPS**: SSL/TLS automático en staging y production
+- 🚀 **Routing**: Path-based y hostname-based
+- 📊 **Rate Limiting**: Control de tráfico en production
+
+### Setup Rápido
+
+```bash
+# Habilitar Ingress en Minikube (una sola vez)
+./scripts/setup-ingress.sh
+
+# Acceder a Jenkins
+http://jenkins-dev.local      # Development
+https://jenkins-staging.local # Staging (HTTPS)
+https://jenkins.local         # Production (HTTPS)
+```
+
+> 💡 Comparación: NodePort (IP:puerto) vs Ingress (hostname). Ver [`ingress/README.md`](ingress/README.md)
 
 ---
 
@@ -225,18 +250,21 @@ Para más detalles: [`jcasc/README.md`](jcasc/README.md)
 ### Usando Scripts (Recomendado)
 
 ```bash
-# Instalación simple
+# 1. Setup Ingress (una sola vez)
+./scripts/setup-ingress.sh
+
+# 2. Instalación: Simple
 ./scripts/setup.sh
 
-# O con Kustomize (ambiente-específico)
+# 2. Instalación: Con Kustomize (ambiente-específico)
 ./scripts/deploy-env.sh dev      # Development
 ./scripts/deploy-env.sh staging  # Staging
 ./scripts/deploy-env.sh prod     # Production
 
-# Obtener contraseña de admin
+# 3. Obtener contraseña de admin
 ./scripts/get-admin-password.sh
 
-# Limpiar todo (elimina namespace y datos)
+# Cleanup
 ./scripts/cleanup.sh
 ```
 

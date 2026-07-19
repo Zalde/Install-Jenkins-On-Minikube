@@ -12,6 +12,7 @@ resources:
   - ../../jenkins-setup-k8s.yaml
   - ../../deployment.yaml
   - ../../jcasc/configmap.yaml
+  - ingress.yaml
 
 # Common labels applied to all resources
 commonLabels:
