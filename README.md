@@ -128,6 +128,36 @@ http://<minikube_ip>:32000
 
 ---
 
+## Monitoreo - Prometheus + Grafana
+
+**Prometheus + Grafana** proporcionan monitoreo completo de Jenkins y Kubernetes:
+
+- 📊 **Prometheus**: Recolecta métricas de Jenkins y Kubernetes
+- 📈 **Grafana**: Visualiza dashboards con métricas
+- 🚨 **Alertas**: Notificaciones para problemas
+- 🔍 **PromQL**: Lenguaje poderoso para consultas
+
+### Setup Rápido
+
+```bash
+# Instalar Prometheus + Grafana
+./scripts/setup-monitoring.sh
+
+# Acceder
+http://prometheus.local      # Prometheus
+http://grafana.local         # Grafana (admin/admin123)
+```
+
+**Métricas monitoreadas:**
+- ✅ Jenkins builds (éxito/fallo/duración)
+- 💾 Memory/CPU usage (Jenkins, Kubernetes)
+- 🔌 Pod health y disponibilidad
+- 📦 PVC usage
+
+> 💡 Para más detalles: [`monitoring/README.md`](monitoring/README.md)
+
+---
+
 ## Ingress - Acceso HTTP/HTTPS
 
 **Ingress** proporciona acceso profesional a Jenkins via hostnames en lugar de IP:puerto:
@@ -253,15 +283,18 @@ Para más detalles: [`jcasc/README.md`](jcasc/README.md)
 # 1. Setup Ingress (una sola vez)
 ./scripts/setup-ingress.sh
 
-# 2. Instalación: Simple
+# 2. Instalar Monitoreo (Prometheus + Grafana)
+./scripts/setup-monitoring.sh
+
+# 3. Instalación: Simple
 ./scripts/setup.sh
 
-# 2. Instalación: Con Kustomize (ambiente-específico)
+# 3. Instalación: Con Kustomize (ambiente-específico)
 ./scripts/deploy-env.sh dev      # Development
 ./scripts/deploy-env.sh staging  # Staging
 ./scripts/deploy-env.sh prod     # Production
 
-# 3. Obtener contraseña de admin
+# 4. Obtener contraseña de admin
 ./scripts/get-admin-password.sh
 
 # Cleanup
@@ -278,6 +311,28 @@ kubectl kustomize kustomize/overlays/prod
 
 # Aplicar directamente
 kubectl apply -k kustomize/overlays/dev
+```
+
+### Monitoreo
+
+```bash
+# Ver estado del monitoring stack
+kubectl get pods -n monitoring
+
+# Ver logs de Prometheus
+kubectl logs deployment/prometheus -n monitoring
+
+# Ver logs de Grafana
+kubectl logs deployment/grafana -n monitoring
+
+# Ver alertas en Prometheus
+kubectl port-forward svc/prometheus -n monitoring 9090:9090
+# Abrir: http://localhost:9090/alerts
+
+# Acceder a Grafana
+http://grafana.local          # Con Ingress
+# O: kubectl port-forward svc/grafana -n monitoring 3000:3000
+#    Luego: http://localhost:3000
 ```
 
 ### Comandos kubectl directos
