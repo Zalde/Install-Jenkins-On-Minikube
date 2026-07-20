@@ -1,403 +1,760 @@
-# Jenkins on Kubernetes (Minikube)
+# Jenkins on Kubernetes (Minikube) 🚀
 
-Guía paso a paso para instalar Jenkins en un entorno local con Minikube.
-Orientada a entrenamiento y laboratorios.
+> **Guía profesional para instalar Jenkins en Kubernetes local** usando Minikube, Kustomize, Ingress, JCasC y Monitoreo.
 
----
-
-## Pre-requisitos
-
-| Herramienta | Versión mínima | Instalación |
-|-------------|---------------|-------------|
-| minikube    | v1.32+        | https://minikube.sigs.k8s.io/docs/start |
-| kubectl     | v1.29+        | https://kubernetes.io/docs/tasks/tools  |
+Orientada a entrenamiento, laboratorios y preparación para ambientes de producción.
 
 ---
 
-## Arquitectura del laboratorio
+## 📋 Tabla de Contenidos
 
-```
-[Browser] → minikube_ip:32000
-                  │
-            [NodePort Service]
-                  │
-           [Jenkins Pod :8080]
-                  │
-         [PersistentVolume 5Gi]
-         (jenkins_home persistente)
-```
+- [Overview](#overview)
+- [Pre-requisitos](#pre-requisitos)
+- [Instalación Rápida](#instalación-rápida)
+- [Arquitectura](#arquitectura)
+- [Guías Detalladas](#guías-detalladas)
+- [Características](#características)
+- [Comandos Útiles](#comandos-útiles)
+- [Troubleshooting](#troubleshooting)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
+- [Contribuciones](#contribuciones)
 
 ---
 
-## Instalación Rápida (Recomendado)
+## 🎯 Overview
 
-### Opción 1: Setup Simple
-Para instalación rápida con valores por defecto:
+Este proyecto proporciona una **instalación profesional de Jenkins en Kubernetes**, perfecta para:
+
+- 🎓 **Aprender Kubernetes**: Experiencia práctica con K8s
+- 🔬 **Laboratorios**: Testear pipelines sin afectar producción
+- 🚀 **Preparación Production**: Best practices aplicables a prod
+
+### ¿Qué incluye?
+
+| Componente | Descripción | Estado |
+|-----------|-------------|--------|
+| **Jenkins** | 2.504 LTS con JDK 21 | ✅ Incluido |
+| **Kustomize** | Multi-ambiente (dev/staging/prod) | ✅ Incluido |
+| **Ingress** | Acceso via hostname (jenkins.local) | ✅ Incluido |
+| **JCasC** | Configuración como código en YAML | ✅ Incluido |
+| **Prometheus** | Métricas y alertas | ✅ Incluido |
+| **Grafana** | Dashboards visuales | ✅ Incluido |
+| **Scripts** | Automatización completa | ✅ Incluido |
+
+---
+
+## ⚙️ Pre-requisitos
+
+| Herramienta | Versión | Instalación |
+|-----------|---------|-------------|
+| **Docker** | 20.10+ | [docker.com](https://www.docker.com/) |
+| **Minikube** | v1.32+ | [minikube.sigs.k8s.io](https://minikube.sigs.k8s.io/docs/start) |
+| **kubectl** | v1.29+ | [kubernetes.io](https://kubernetes.io/docs/tasks/tools) |
+| **Kustomize** | v5.0+ | `brew install kustomize` |
+
+### Requisitos de Máquina
+
+- **CPU**: 2+ cores
+- **RAM**: 4GB mínimo (6GB recomendado)
+- **Disk**: 20GB libre
+- **OS**: macOS, Linux o Windows (WSL2)
+
+### Verificar Instalación
 
 ```bash
+# Verificar todas las herramientas
+docker --version     # Docker version 20.10+
+minikube version     # minikube version v1.32+
+kubectl version      # Client version v1.29+
+kustomize version    # v5.0+
+```
+
+---
+
+## 🚀 Instalación Rápida
+
+### Opción A: Simple (Recomendado para aprender)
+
+Para aprender sin complicaciones extra:
+
+```bash
+# 1. Ejecutar setup
 ./scripts/setup.sh
-# Acceder: http://<minikube_ip>:32000
-```
 
-### Opción 2: Con Kustomize + Ingress (Recomendado)
-Para desplegar con Ingress y configuración por ambiente:
-
-```bash
-# 1. Setup Ingress (una sola vez)
-./scripts/setup-ingress.sh
-
-# 2. Desplegar en el ambiente deseado
-./scripts/deploy-env.sh dev        # http://jenkins-dev.local
-./scripts/deploy-env.sh staging    # https://jenkins-staging.local
-./scripts/deploy-env.sh prod       # https://jenkins.local
-```
-
-> 💡 Ingress permite acceso via hostnames profesionales. Ver [`ingress/README.md`](ingress/README.md)
-
-### Obtener Credenciales
-
-Después de cualquier instalación:
-
-```bash
+# 2. Obtener contraseña
 ./scripts/get-admin-password.sh
-```
 
-> 💡 Para más detalles sobre los scripts, ver [`scripts/README.md`](scripts/README.md)
-
----
-
-## Paso a Paso Manual (Alternativa)
-
-Si prefieres ejecutar cada paso manualmente:
-
-### 1. Iniciar Minikube
-
-```bash
-minikube start
-```
-
-### 2. Crear Namespace, ServiceAccount, PVC y Service
-
-```bash
-kubectl apply -f jenkins-setup-k8s.yaml
-```
-
-Verifica que el PVC quede en estado `Bound`:
-
-```bash
-kubectl get pvc -n jenkins
-```
-
-### 3. Crear ConfigMap con JCasC (Opcional pero recomendado)
-
-```bash
-kubectl apply -f jcasc/configmap.yaml
-```
-
-> 💡 Esto aplica la configuración de Jenkins via Configuration as Code
-
-### 4. Crear el Deployment
-
-```bash
-kubectl apply -f deployment.yaml
-```
-
-### 5. Verificar que el pod esté Running y Ready
-
-```bash
-kubectl get pods -n jenkins -w
-```
-
-> ⏳ Jenkins tarda ~2 minutos en iniciar. Esperar hasta ver `1/1 Running`.
-
-### 6. Acceder a Jenkins
-
-```bash
-# Obtener IP de Minikube
-minikube ip
-
-# Abrir en el navegador
+# 3. Abrir en navegador
 http://<minikube_ip>:32000
 ```
 
-### 7. Obtener la contraseña inicial
+⏱️ **Tiempo**: ~3 minutos
+
+### Opción B: Profesional (Recomendado para labs)
+
+Para setup similar a production:
 
 ```bash
-./scripts/get-admin-password.sh
-```
-
----
-
-## Monitoreo - Prometheus + Grafana
-
-**Prometheus + Grafana** proporcionan monitoreo completo de Jenkins y Kubernetes:
-
-- 📊 **Prometheus**: Recolecta métricas de Jenkins y Kubernetes
-- 📈 **Grafana**: Visualiza dashboards con métricas
-- 🚨 **Alertas**: Notificaciones para problemas
-- 🔍 **PromQL**: Lenguaje poderoso para consultas
-
-### Setup Rápido
-
-```bash
-# Instalar Prometheus + Grafana
-./scripts/setup-monitoring.sh
-
-# Acceder
-http://prometheus.local      # Prometheus
-http://grafana.local         # Grafana (admin/admin123)
-```
-
-**Métricas monitoreadas:**
-- ✅ Jenkins builds (éxito/fallo/duración)
-- 💾 Memory/CPU usage (Jenkins, Kubernetes)
-- 🔌 Pod health y disponibilidad
-- 📦 PVC usage
-
-> 💡 Para más detalles: [`monitoring/README.md`](monitoring/README.md)
-
----
-
-## Ingress - Acceso HTTP/HTTPS
-
-**Ingress** proporciona acceso profesional a Jenkins via hostnames en lugar de IP:puerto:
-
-- 🌐 **Hostnames**: `jenkins-dev.local`, `jenkins-staging.local`, `jenkins.local`
-- 🔒 **HTTPS**: SSL/TLS automático en staging y production
-- 🚀 **Routing**: Path-based y hostname-based
-- 📊 **Rate Limiting**: Control de tráfico en production
-
-### Setup Rápido
-
-```bash
-# Habilitar Ingress en Minikube (una sola vez)
+# 1. Habilitar Ingress (una sola vez)
 ./scripts/setup-ingress.sh
 
-# Acceder a Jenkins
-http://jenkins-dev.local      # Development
-https://jenkins-staging.local # Staging (HTTPS)
-https://jenkins.local         # Production (HTTPS)
+# 2. Instalar monitoreo (una sola vez)
+./scripts/setup-monitoring.sh
+
+# 3. Desplegar Jenkins por ambiente
+./scripts/deploy-env.sh dev        # http://jenkins-dev.local
+./scripts/deploy-env.sh staging    # https://jenkins-staging.local
+./scripts/deploy-env.sh prod       # https://jenkins.local
+
+# 4. Obtener credenciales
+./scripts/get-admin-password.sh
+
+# 5. Acceder a dashboards
+http://grafana.local               # Monitoreo (admin/admin123)
+http://prometheus.local            # Alertas
 ```
 
-> 💡 Comparación: NodePort (IP:puerto) vs Ingress (hostname). Ver [`ingress/README.md`](ingress/README.md)
+⏱️ **Tiempo**: ~5 minutos
+
+### Opción C: Manual (Recomendado para entender detalles)
+
+Ver sección [Guía Manual](#guía-manual-alternativa)
 
 ---
 
-## Kustomize - Múltiples Ambientes
+## 🏗️ Arquitectura
 
-**Kustomize** permite mantener una configuración base común y aplicar variaciones por ambiente (dev/staging/prod) sin duplicar YAML:
+### Componentes y Conexiones
 
 ```
-kustomize/
-├── base/               # Configuración común para todos los ambientes
-└── overlays/           # Variaciones específicas por ambiente
-    ├── dev/            # Desarrollo: recursos bajos, logs DEBUG
-    ├── staging/        # Staging: config similar a producción
-    └── prod/           # Producción: recursos altos, logs WARN
+┌─────────────────────────────────────────────────────────────────┐
+│                    Minikube Kubernetes Cluster                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                   INGRESS CONTROLLER (NGINX)            │   │
+│  │              Hostnames: jenkins*.local                  │   │
+│  └────┬─────────────────┬──────────────────┬───────────────┘   │
+│       │                 │                  │                   │
+│       ▼                 ▼                  ▼                   │
+│  ┌─────────┐    ┌────────────┐      ┌──────────┐              │
+│  │ Jenkins │    │ Prometheus │      │ Grafana  │              │
+│  │ :8080   │    │  :9090     │      │  :3000   │              │
+│  │ ├ PVC   │    │            │      │          │              │
+│  │ └ JCasC │    │ ├ Alerts   │      │ ├ K8s    │              │
+│  │         │    │ └ Targets  │      │ ├ Jenkins│              │
+│  │ Env:dev │    │            │      │ └ Apps   │              │
+│  │ staging │    │ Scrape 15s │      │          │              │
+│  │ prod    │    │            │      │ Login:   │              │
+│  │         │    │            │      │ admin/   │              │
+│  │Resources│    │ Storage:   │      │ admin123 │              │
+│  │ ├ CPU   │    │ 30d        │      │          │              │
+│  │ ├ Memory│    │            │      │Datasource│              │
+│  │ └ PVC   │    └──────────────────────────────┘              │
+│  │         │           ▲                                      │
+│  │ Probes  │           │ Query                                │
+│  │ ├ Ready │           │                                      │
+│  │ └ Live  │    ┌──────┴─────┐                               │
+│  │         │    │ Prometheus │                               │
+│  │Kustomize│    │ API :9090  │                               │
+│  │ ├ Base  │    └────────────┘                               │
+│  │ └ Devop │                                                 │
+│  └─────────┘    ┌──────────────────────────────┐             │
+│                 │ Kubernetes API / Kubelet     │             │
+│                 │ (Metrics + Node Info)        │             │
+│                 └──────────────────────────────┘             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+        ║ Acceso Local (Host)                                    
+        ║                                                        
+    ┌───╨─────────────────────────┐                             
+    │   Browser / kubectl cli     │                             
+    ├─────────────────────────────┤                             
+    │ http://jenkins-dev.local    │ → Jenkins Dev              
+    │ https://jenkins.local       │ → Jenkins Prod             
+    │ http://grafana.local        │ → Monitoreo               
+    │ http://prometheus.local     │ → Alertas                 
+    └─────────────────────────────┘                             
 ```
 
-### Desplegar por Ambiente
+### Stack Tecnológico
+
+```
+Frontend/UI
+├── Browser (cualquiera)
+└── Jenkins Web (puerto 8080)
+
+Observabilidad
+├── Prometheus (métricas)
+├── Grafana (dashboards)
+└── Alertas
+
+Orquestación
+├── Kubernetes (minikube)
+├── Kustomize (config)
+└── Ingress (routing)
+
+Jenkins
+├── JCasC (configuración)
+├── Persistent Volume (datos)
+└── Security Context (permiso no-root)
+```
+
+---
+
+## 📖 Guías Detalladas
+
+### Guía Rápida: Setup Simple
+
+**Para**: Aprender rápido, testear, laboratorios
 
 ```bash
-# Development (para aprender/testear)
+./scripts/setup.sh
+./scripts/get-admin-password.sh
+# Acceder: http://<minikube_ip>:32000
+```
+
+👉 Ver: [`scripts/README.md`](scripts/README.md)
+
+### Guía Profesional: Multi-Ambiente
+
+**Para**: Simular dev/staging/prod, usar en equipo
+
+```bash
+# 1. Setup inicial (primera vez)
+./scripts/setup-ingress.sh
+
+# 2. Desplegar a ambiente específico
 ./scripts/deploy-env.sh dev
 
-# Staging (pre-producción)
-./scripts/deploy-env.sh staging
-
-# Production
-./scripts/deploy-env.sh prod
+# 3. Modificar configuración
+kubectl kustomize kustomize/overlays/dev  # Ver cambios
+kubectl apply -k kustomize/overlays/dev   # Aplicar
 ```
 
-### Ver Configuración Generada
+👉 Ver: [`kustomize/README.md`](kustomize/README.md)
+
+### Guía: Acceso Profesional
+
+**Para**: Usar hostnames en lugar de IP:puerto
 
 ```bash
-# Sin aplicar cambios (dry-run)
-kubectl kustomize kustomize/overlays/dev
+./scripts/setup-ingress.sh
+# Acceder: http://jenkins-dev.local
 ```
 
-Para más detalles: [`kustomize/README.md`](kustomize/README.md)
+👉 Ver: [`ingress/README.md`](ingress/README.md)
 
----
+### Guía: Configuración como Código
 
-## Jenkins Configuration as Code (JCasC)
-
-La configuración de Jenkins se puede gestionar completamente via YAML, permitiendo:
-
-- 📝 **Versionable en Git**: Toda la configuración está en código
-- 🔄 **Reproducible**: Mismo YAML = Mismo Jenkins
-- 🚀 **Automatizable**: Se aplica al iniciar el pod
-- 🔍 **Auditable**: Ver exactamente qué cambió y quién lo hizo
-
-### Estructura de JCasC
-
-```
-jcasc/
-├── README.md              # Documentación de JCasC
-├── configmap.yaml         # ConfigMap que monta la configuración en K8s
-└── jenkins.yaml           # Archivo de referencia con ejemplos
-```
-
-### Usar JCasC
-
-La configuración se monta automáticamente:
-1. El archivo `jcasc/configmap.yaml` crea un ConfigMap en K8s
-2. El Deployment monta este ConfigMap en `/var/jenkins_home/casc_configs`
-3. Jenkins lo lee automáticamente al iniciar (via env var `CASC_JENKINS_CONFIG`)
-
-### Modificar la Configuración
+**Para**: Versionear configuración de Jenkins en Git
 
 ```bash
-# Editar la configuración
+# Editar configuración
 kubectl edit configmap jenkins-casc-config -n jenkins
 
-# Reiniciar Jenkins para aplicar cambios
+# Reiniciar para aplicar
 kubectl rollout restart deployment/jenkins -n jenkins
 ```
 
-Para más detalles: [`jcasc/README.md`](jcasc/README.md)
+👉 Ver: [`jcasc/README.md`](jcasc/README.md)
 
----
+### Guía: Monitoreo y Alertas
 
-## ¿Qué mejoró respecto a la versión anterior?
-
-| Aspecto           | Antes                        | Ahora                          | Por qué importa |
-|-------------------|------------------------------|--------------------------------|-----------------|
-| **JDK**           | JDK 11 (EOL)                 | JDK 21 (LTS activo)            | JDK 11 ya no recibe parches de seguridad |
-| **Tag de imagen** | `lts` (flotante)             | `2.504-jdk21` (fijo)           | Tags flotantes rompen la reproducibilidad |
-| **Almacenamiento**| `emptyDir` (volátil)         | `PersistentVolumeClaim` (5Gi)  | Con emptyDir perdés todo al reiniciar el pod |
-| **ServiceAccount**| default                      | Dedicado `jenkins`             | Principio de mínimo privilegio |
-| **SecurityContext**| Corre como root             | Non-root (UID 1000)            | Buena práctica de seguridad en contenedores |
-| **Recursos**      | Sin límites                  | Requests + Limits definidos    | Sin límites el pod puede consumir todo el nodo |
-| **Readiness Probe**| Ninguna                     | HTTP GET /login                | K8s sabe cuándo Jenkins realmente está listo |
-| **Liveness Probe** | Ninguna                     | HTTP GET /login                | K8s reinicia el pod si Jenkins deja de responder |
-| **Puerto agentes**| No expuesto                  | NodePort 32001                 | Necesario para conectar Jenkins agents |
-
----
-
-## Comandos útiles
-
-### Usando Scripts (Recomendado)
+**Para**: Visualizar métricas, recibir alertas
 
 ```bash
-# 1. Setup Ingress (una sola vez)
-./scripts/setup-ingress.sh
-
-# 2. Instalar Monitoreo (Prometheus + Grafana)
 ./scripts/setup-monitoring.sh
+# Acceder: http://grafana.local (admin/admin123)
+```
 
-# 3. Instalación: Simple
+👉 Ver: [`monitoring/README.md`](monitoring/README.md)
+
+### Guía Manual (Alternativa)
+
+Si prefieres hacer cada paso manualmente:
+
+```bash
+# 1. Iniciar Minikube
+minikube start --cpus 2 --memory 2048
+
+# 2. Crear recursos base
+kubectl apply -f jenkins-setup-k8s.yaml
+
+# 3. Aplicar configuración JCasC
+kubectl apply -f jcasc/configmap.yaml
+
+# 4. Crear Deployment
+kubectl apply -f deployment.yaml
+
+# 5. Habilitar Ingress (opcional)
+./scripts/setup-ingress.sh
+kubectl apply -f kustomize/base/ingress.yaml
+
+# 6. Verificar estado
+kubectl get pods -n jenkins
+kubectl logs -f -n jenkins -l app=jenkins
+```
+
+---
+
+## ⭐ Características
+
+### Security (Seguridad)
+
+| Característica | Descripción | Beneficio |
+|---|---|---|
+| **Non-root** | Jenkins corre como UID 1000 | No puede acceder a archivos del host |
+| **ServiceAccount** | Dedicado, no usa `default` | Principio de mínimo privilegio |
+| **SecurityContext** | Restricciones a nivel pod | Previene escalada de privilegios |
+| **Resource Limits** | CPU/Memory definidos | Evita que pod consuma todo el nodo |
+
+### Reliability (Confiabilidad)
+
+| Característica | Descripción | Beneficio |
+|---|---|---|
+| **Persistent Volume** | 5Gi de almacenamiento | No pierdes datos al reiniciar |
+| **Readiness Probe** | Verifica `/login` | K8s sabe cuándo está listo |
+| **Liveness Probe** | Reinicia si falla | Jenkins se recupera automáticamente |
+| **Resource Requests** | Reserva recursos | Jenkins siempre tiene recursos suficientes |
+
+### Operability (Operabilidad)
+
+| Característica | Descripción | Beneficio |
+|---|---|---|
+| **Automation Scripts** | setup.sh, deploy-env.sh | Setup en segundos sin errores |
+| **JCasC** | Configuración versionada | Reproducibilidad garantizada |
+| **Kustomize** | Multi-ambiente | Dev/staging/prod en código |
+| **Ingress** | Hostnames profesionales | `jenkins.local` en lugar de IP:puerto |
+| **Prometheus+Grafana** | Monitoreo completo | Visibilidad total del sistema |
+
+---
+
+## 🛠️ Comandos Útiles
+
+### Instalación
+
+```bash
+# Setup automático (simple)
 ./scripts/setup.sh
 
-# 3. Instalación: Con Kustomize (ambiente-específico)
-./scripts/deploy-env.sh dev      # Development
-./scripts/deploy-env.sh staging  # Staging
-./scripts/deploy-env.sh prod     # Production
+# Setup profesional
+./scripts/setup-ingress.sh
+./scripts/setup-monitoring.sh
+./scripts/deploy-env.sh dev
 
-# 4. Obtener contraseña de admin
+# Obtener credenciales
 ./scripts/get-admin-password.sh
 
-# Cleanup
+# Limpiar todo
 ./scripts/cleanup.sh
 ```
 
-### Comandos Kustomize
+### Jenkins
+
+```bash
+# Ver estado
+kubectl get pods -n jenkins
+kubectl get svc -n jenkins
+kubectl get pvc -n jenkins
+
+# Ver logs
+kubectl logs -f deployment/jenkins -n jenkins
+
+# Ejecutar comando en pod
+kubectl exec -it <pod_name> -n jenkins -- bash
+
+# Ver/editar configuración
+kubectl get configmap jenkins-casc-config -n jenkins -o yaml
+kubectl edit configmap jenkins-casc-config -n jenkins
+
+# Reiniciar
+kubectl rollout restart deployment/jenkins -n jenkins
+
+# Port-forward (acceso directo)
+kubectl port-forward svc/jenkins -n jenkins 8080:8080
+```
+
+### Kustomize
 
 ```bash
 # Ver YAML generado (sin aplicar)
 kubectl kustomize kustomize/overlays/dev
 kubectl kustomize kustomize/overlays/staging
-kubectl kustomize kustomize/overlays/prod
 
 # Aplicar directamente
 kubectl apply -k kustomize/overlays/dev
+
+# Validar YAML
+kubectl kustomize kustomize/overlays/dev | kubectl apply -f - --dry-run=client
 ```
 
 ### Monitoreo
 
 ```bash
-# Ver estado del monitoring stack
+# Ver estado
 kubectl get pods -n monitoring
 
-# Ver logs de Prometheus
-kubectl logs deployment/prometheus -n monitoring
+# Ver logs
+kubectl logs -f deployment/prometheus -n monitoring
+kubectl logs -f deployment/grafana -n monitoring
 
-# Ver logs de Grafana
-kubectl logs deployment/grafana -n monitoring
-
-# Ver alertas en Prometheus
-kubectl port-forward svc/prometheus -n monitoring 9090:9090
-# Abrir: http://localhost:9090/alerts
-
-# Acceder a Grafana
+# Acceder
 http://grafana.local          # Con Ingress
-# O: kubectl port-forward svc/grafana -n monitoring 3000:3000
-#    Luego: http://localhost:3000
+kubectl port-forward svc/grafana -n monitoring 3000:3000  # Sin Ingress
+
+# Ver alertas
+http://prometheus.local/alerts
 ```
 
-### Comandos kubectl directos
+### Ingress
 
 ```bash
-# Ver todos los recursos del namespace
-kubectl get all -n jenkins
+# Ver Ingress
+kubectl get ingress -n jenkins -n monitoring
 
-# Ver los logs en tiempo real
-kubectl logs -f -n jenkins -l app=jenkins
+# Describir
+kubectl describe ingress jenkins -n jenkins
 
-# Describir el pod (útil para debuggear probes o scheduling)
+# Ver eventos
+kubectl get events -n jenkins
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Jenkins no inicia
+
+**Síntomas**: Pod en `Pending` o `CrashLoopBackOff`
+
+**Soluciones**:
+
+```bash
+# 1. Ver detalles del error
+kubectl describe pod <pod_name> -n jenkins
+kubectl logs <pod_name> -n jenkins
+
+# 2. Verificar PVC
+kubectl get pvc -n jenkins
+kubectl describe pvc jenkins-pvc -n jenkins
+
+# 3. Verificar recursos disponibles
+kubectl top nodes
+kubectl top pods -n jenkins
+
+# 4. Reiniciar
+kubectl rollout restart deployment/jenkins -n jenkins
+```
+
+### No puedo acceder a jenkins.local
+
+**Síntomas**: `Connection refused` o `Name not resolved`
+
+**Soluciones**:
+
+```bash
+# 1. Verificar que el hostname está en /etc/hosts
+grep jenkins-dev.local /etc/hosts
+
+# 2. Si no está, ejecutar:
+./scripts/setup-ingress.sh
+
+# 3. O agregarlo manualmente:
+echo "$(minikube ip) jenkins-dev.local jenkins-staging.local jenkins.local" | sudo tee -a /etc/hosts
+
+# 4. En macOS, limpiar DNS:
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+```
+
+### Prometheus no scrapia Jenkins
+
+**Síntomas**: Jenkins no aparece en Prometheus
+
+**Soluciones**:
+
+```bash
+# 1. Verificar que Jenkins está corriendo
+kubectl get pods -n jenkins
+
+# 2. Verificar configuración de Prometheus
+kubectl get configmap prometheus-config -n monitoring -o yaml
+
+# 3. Verificar que el pod tiene anotaciones
 kubectl describe pod -n jenkins -l app=jenkins
 
-# Ver el estado del PVC
-kubectl get pvc -n jenkins
+# 4. Revisar logs de Prometheus
+kubectl logs -f deployment/prometheus -n monitoring
+```
 
-# Reiniciar el deployment (sin perder datos gracias al PVC)
+### Ingress no funciona
+
+**Síntomas**: Ingress sin ADDRESS o no responde
+
+**Soluciones**:
+
+```bash
+# 1. Verificar addon
+minikube addons list | grep ingress
+
+# 2. Si no está habilitado:
+minikube addons enable ingress
+sleep 30
+
+# 3. Verificar ingress controller
+kubectl get pods -n ingress-nginx
+
+# 4. Describir ingress
+kubectl describe ingress jenkins -n jenkins
+```
+
+---
+
+## ❓ FAQ
+
+### ¿Puedo usar esto en producción?
+
+**Respuesta**: Parcialmente.
+
+**Recomendaciones para producción**:
+- ✅ Usar el stack (Kustomize, JCasC, Ingress, Monitoreo)
+- ✅ Usar en AKS/EKS/GKE en lugar de Minikube
+- ⚠️ Agregar Helm Chart oficial de Jenkins
+- ⚠️ Usar Prometheus Operator en lugar de configuración manual
+- ⚠️ Agregar cert-manager para certificados automáticos
+- ⚠️ Agregar persistencia distribuida (no local)
+- ⚠️ Configurar backups de PVC
+
+Ver: [Roadmap](#roadmap)
+
+### ¿Qué versión de Jenkins es?
+
+**Respuesta**: Jenkins 2.504 LTS con JDK 21 (LTS hasta 2026)
+
+Para cambiar, edita `deployment.yaml`:
+
+```yaml
+image: jenkins/jenkins:2.504-jdk21  # Cambiar aquí
+```
+
+Ver: https://hub.docker.com/r/jenkins/jenkins
+
+### ¿Cómo agregar plugins a Jenkins?
+
+**Opción 1: UI (Manual)**
+
+1. Acceder a Jenkins
+2. Manage → Plugin Manager
+3. Buscar e instalar
+
+**Opción 2: JCasC (Infraestructura como código)**
+
+Edita `jcasc/configmap.yaml`:
+
+```yaml
+jenkins:
+  plugins:
+    - workflow-aggregator:latest
+    - git:latest
+    - github:latest
+```
+
+Luego:
+
+```bash
+kubectl apply -f jcasc/configmap.yaml
 kubectl rollout restart deployment/jenkins -n jenkins
+```
 
-# Ver/editar la configuración JCasC
-kubectl get configmap jenkins-casc-config -n jenkins -o yaml
-kubectl edit configmap jenkins-casc-config -n jenkins
+### ¿Cómo cambiar recursos (CPU/Memory)?
 
-# Eliminar todo el laboratorio
-kubectl delete namespace jenkins
+Edita `kustomize/overlays/<env>/kustomization.yaml`:
+
+```yaml
+- op: replace
+  path: /spec/template/spec/containers/0/resources/limits/cpu
+  value: "2"  # Cambiar aquí
+```
+
+Luego:
+
+```bash
+./scripts/deploy-env.sh <env>
+```
+
+### ¿Puedo tener múltiples Jenkins corriendo?
+
+**Sí**. Crea un overlay adicional:
+
+```bash
+mkdir kustomize/overlays/test
+# Copiar archivos de dev
+cp kustomize/overlays/dev/* kustomize/overlays/test/
+
+# Modificar hostname en ingress-patch.yaml
+sed -i 's/jenkins-dev.local/jenkins-test.local/g' kustomize/overlays/test/ingress-patch.yaml
+
+# Desplegar
+./scripts/deploy-env.sh test
+```
+
+### ¿Cómo resetear Jenkins?
+
+```bash
+# Opción 1: Borrar solo datos (no PVC)
+kubectl exec -it <pod_name> -n jenkins -- rm -rf /var/jenkins_home/*
+
+# Opción 2: Borrar PVC (pierde todo)
+kubectl delete pvc jenkins-pvc -n jenkins
+kubectl delete pod -n jenkins -l app=jenkins
+```
+
+### ¿Cómo hacer backup de Jenkins?
+
+```bash
+# Backup datos de Jenkins
+kubectl exec deployment/jenkins -n jenkins -- tar czf /tmp/jenkins-backup.tar.gz /var/jenkins_home/
+
+# Descargar
+kubectl cp jenkins/<pod_name>:/tmp/jenkins-backup.tar.gz ./jenkins-backup.tar.gz
+
+# Restaurar
+kubectl cp ./jenkins-backup.tar.gz jenkins/<pod_name>:/tmp/
+kubectl exec -it <pod_name> -n jenkins -- tar xzf /tmp/jenkins-backup.tar.gz -C /
 ```
 
 ---
 
-## Troubleshooting
+## 🗺️ Roadmap
 
-### El pod queda en `Pending`
-```bash
-kubectl describe pod <pod_name> -n jenkins
-```
-Causas comunes:
-- El PVC no quedó en estado `Bound` → verificar con `kubectl get pvc -n jenkins`
-- Recursos insuficientes en Minikube → `minikube start --cpus 2 --memory 2048`
+### Fase 1: Core (✅ Completado)
 
-### El pod queda en `CrashLoopBackOff`
-```bash
-kubectl logs <pod_name> -n jenkins --previous
-```
-Causa común: problema de permisos en el volumen.
-Solución temporal para labs:
-```bash
-kubectl patch deployment jenkins -n jenkins \
-  --type=json \
-  -p='[{"op":"remove","path":"/spec/template/spec/securityContext"}]'
-```
+- ✅ Jenkins básico en Kubernetes
+- ✅ Kustomize multi-ambiente
+- ✅ Ingress y HTTPS
+- ✅ JCasC
+- ✅ Monitoreo (Prometheus + Grafana)
+- ✅ Scripts de automatización
 
-### No puedo acceder al browser
-- Verificar que Minikube está corriendo: `minikube status`
-- Verificar la IP: `minikube ip`
-- Verificar el Service: `kubectl get svc -n jenkins`
-- Alternativa: `minikube service jenkins -n jenkins --url`
+### Fase 2: Production Ready (🔄 En Progreso)
+
+- 🔄 Helm Chart oficial
+- 🔄 Backup automático
+- 🔄 Sealed Secrets
+- 🔄 Network Policies
+- 🔄 Pod Disruption Budgets
+
+### Fase 3: Enterprise (📋 Planeado)
+
+- 📋 Jenkins Controller + Agents
+- 📋 Prometheus Operator
+- 📋 Alertmanager
+- 📋 ELK Stack (logs)
+- 📋 GitOps (ArgoCD)
+- 📋 Multi-cluster
+
+### Fase 4: Advanced (💭 Futuro)
+
+- 💭 Jenkins X
+- 💭 Pipeline as Code (Jenkinsfile)
+- 💭 Integration tests
+- 💭 Performance testing
+- 💭 Disaster recovery
 
 ---
 
-## Próximos pasos sugeridos
+## 🤝 Contribuciones
 
-Una vez que domines esta instalación, te recomendamos explorar:
+Las contribuciones son bienvenidas!
 
-- **[Helm Chart oficial de Jenkins](https://github.com/jenkinsci/helm-charts)** — instalación configurable con un solo comando
-- **[Jenkins Configuration as Code (JCasC)](https://www.jenkins.io/projects/jcasc/)** — toda la config de Jenkins en YAML versionado en Git
-- **[Kubernetes Plugin para Jenkins](https://plugins.jenkins.io/kubernetes/)** — agentes efímeros como pods bajo demanda
-- **[Jenkins Operator](https://jenkinsci.github.io/kubernetes-operator/)** — gestión de Jenkins como Custom Resource en K8s
+### Cómo Contribuir
+
+1. Fork el repo
+2. Crea una rama: `git checkout -b feature/mi-mejora`
+3. Commit: `git commit -m "Descripción"`
+4. Push: `git push origin feature/mi-mejora`
+5. Abre un Pull Request
+
+### Mejoras Buscadas
+
+- 📖 Documentación (traducciones, ejemplos)
+- 🐛 Bug fixes
+- 🎨 Mejoras de UX
+- ⚡ Performance
+- 🔒 Seguridad
+- 🧪 Tests
+
+---
+
+## 📚 Recursos
+
+### Documentación
+
+- 📄 [`scripts/README.md`](scripts/README.md) - Scripts de automatización
+- 📄 [`jcasc/README.md`](jcasc/README.md) - Jenkins Configuration as Code
+- 📄 [`kustomize/README.md`](kustomize/README.md) - Multi-ambiente con Kustomize
+- 📄 [`ingress/README.md`](ingress/README.md) - Ingress y acceso profesional
+- 📄 [`monitoring/README.md`](monitoring/README.md) - Prometheus + Grafana
+
+### Enlaces Externos
+
+- [Jenkins Oficial](https://jenkins.io/)
+- [Kubernetes Docs](https://kubernetes.io/docs/)
+- [Minikube Docs](https://minikube.sigs.k8s.io/docs/)
+- [Kustomize Reference](https://kubectl.docs.kubernetes.io/guides/)
+- [Prometheus Docs](https://prometheus.io/docs/)
+- [Grafana Docs](https://grafana.com/docs/)
+
+---
+
+## 📝 Mejoras Respecto a Versiones Anteriores
+
+| Aspecto | Antes | Ahora | Impacto |
+|---------|-------|-------|--------|
+| **JDK** | 11 (EOL) | 21 (LTS 2026) | ✅ Seguridad actualizada |
+| **Tag** | `lts` (flotante) | `2.504-jdk21` (fijo) | ✅ Reproducibilidad |
+| **Storage** | `emptyDir` | `PersistentVolumeClaim` | ✅ Datos persistentes |
+| **ServiceAccount** | default | jenkins (dedicado) | ✅ Seguridad |
+| **Security** | root | non-root (UID 1000) | ✅ Best practices |
+| **Limits** | ninguno | CPU/Memory | ✅ Estabilidad |
+| **Probes** | ninguno | Ready + Liveness | ✅ Reliability |
+| **Config** | UI manual | JCasC YAML | ✅ Infrastructure as Code |
+| **Ambientes** | 1 (manual) | 3 (Kustomize) | ✅ Escalabilidad |
+| **Ingress** | NodePort | Ingress + Hostnames | ✅ Production-like |
+| **Monitoreo** | ninguno | Prometheus + Grafana | ✅ Observabilidad |
+
+---
+
+## 📞 Support
+
+¿Preguntas o problemas?
+
+- 📖 Ver [Troubleshooting](#troubleshooting)
+- ❓ Revisar [FAQ](#faq)
+- 📚 Leer documentación en cada directorio
+- 🐛 Abrir un [Issue](https://github.com/Zalde/Install-Jenkins-On-Minikube/issues)
+- 💬 Iniciar una [Discussion](https://github.com/Zalde/Install-Jenkins-On-Minikube/discussions)
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia MIT.
+
+---
+
+## 🙏 Agradecimientos
+
+- Comunidad de Jenkins
+- Comunidad de Kubernetes
+- Minikube team
+- Prometheus y Grafana communities
+
+---
+
+**Última actualización**: Julio 2026
+
+Happy containerizing! 🐳🚀
