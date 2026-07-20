@@ -11,10 +11,10 @@ Orientada a entrenamiento, laboratorios y preparación para ambientes de producc
 - [Overview](#-overview)
 - [Pre-requisitos](#️-pre-requisitos)
 - [Instalación Rápida](#-instalación-rápida)
-- [Arquitectura](#-arquitectura)
+- [Arquitectura](#️-arquitectura)
 - [Guías Detalladas](#-guías-detalladas)
 - [Características](#-características)
-- [Comandos Útiles](#-comandos-útiles)
+- [Comandos Útiles](#️-comandos-útiles)
 - [Troubleshooting](#-troubleshooting)
 - [FAQ](#-faq)
 - [Roadmap](#️-roadmap)
@@ -529,7 +529,7 @@ kubectl describe ingress jenkins -n jenkins
 - ⚠️ Agregar persistencia distribuida (no local)
 - ⚠️ Configurar backups de PVC
 
-Ver: [Roadmap](#roadmap)
+Ver: [Roadmap](#️-roadmap)
 
 ### ¿Qué versión de Jenkins es?
 
@@ -736,8 +736,8 @@ Las contribuciones son bienvenidas!
 
 ¿Preguntas o problemas?
 
-- 📖 Ver [Troubleshooting](#troubleshooting)
-- ❓ Revisar [FAQ](#faq)
+- 📖 Ver [Troubleshooting](#-troubleshooting)
+- ❓ Revisar [FAQ](#-faq)
 - 📚 Leer documentación en cada directorio
 - 🐛 Abrir un [Issue](https://github.com/Zalde/Install-Jenkins-On-Minikube/issues)
 - 💬 Iniciar una [Discussion](https://github.com/Zalde/Install-Jenkins-On-Minikube/discussions)

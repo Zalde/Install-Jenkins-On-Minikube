@@ -4,7 +4,7 @@
 
 Este documento explica cómo se manejan la seguridad en Jenkins en Kubernetes.
 
-**Importante**: Este proyecto está diseñado para **laboratorios y entrenamiento**, no es production-ready por defecto. Ver sección [Seguridad en Producción](#seguridad-en-producción).
+**Importante**: Este proyecto está diseñado para **laboratorios y entrenamiento**, no es production-ready por defecto. Ver sección [Seguridad en Producción](#️-seguridad-en-producción).
 
 ---
 
