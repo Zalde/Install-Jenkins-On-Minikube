@@ -20,7 +20,6 @@ Orientada a entrenamiento, laboratorios y preparación para ambientes de producc
 - [Roadmap](#️-roadmap)
 - [Contribuciones](#-contribuciones)
 - [Recursos](#-recursos)
-- [Licencia](#-licencia)
 
 ---
 
@@ -742,12 +741,6 @@ Las contribuciones son bienvenidas!
 - 📚 Leer documentación en cada directorio
 - 🐛 Abrir un [Issue](https://github.com/Zalde/Install-Jenkins-On-Minikube/issues)
 - 💬 Iniciar una [Discussion](https://github.com/Zalde/Install-Jenkins-On-Minikube/discussions)
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la licencia MIT.
 
 ---
 

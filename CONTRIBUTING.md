@@ -282,13 +282,9 @@ Cuando se revise tu PR:
 
 ## Mapa de Ruta
 
-Ver [Mapa de Ruta en README.md](README.md#mapa-de-ruta)
+Ver [Roadmap en README.md](README.md#️-roadmap)
 
 Las contribuciones alineadas con el mapa de ruta tienen prioridad.
-
-## Licencia
-
-Al contribuir, aceptas que tu código sea licenciado bajo MIT.
 
 ---
 
