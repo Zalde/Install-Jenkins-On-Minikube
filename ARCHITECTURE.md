@@ -1,6 +1,6 @@
-# Architecture Guide
+# Guía de Arquitectura
 
-Documentación detallada de la arquitectura de Jenkins on Kubernetes.
+Documentación detallada de la arquitectura de Jenkins en Kubernetes.
 
 ---
 
@@ -12,32 +12,32 @@ Documentación detallada de la arquitectura de Jenkins on Kubernetes.
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │              INGRESS CONTROLLER (NGINX)                 │   │
-│  │  Routes: jenkins*.local → Services                      │   │
+│  │         CONTROLADOR DE INGRESS (NGINX)                  │   │
+│  │  Rutas: jenkins*.local → Servicios                      │   │
 │  └──────────────────┬──────────────────────────────────────┘   │
 │                     │                                           │
 │     ┌───────────────┼────────────────────┬──────────────────┐   │
 │     ▼               ▼                    ▼                  ▼   │
 │  ┌─────────┐   ┌──────────┐         ┌─────────┐      ┌────────┐
 │  │ Jenkins │   │Prometheus│         │ Grafana │      │ Config │
-│  │ :8080   │   │  :9090   │         │ :3000   │      │ Servers│
+│  │ :8080   │   │  :9090   │         │ :3000   │      │Servers │
 │  │         │   │          │         │         │      │        │
-│  │ Pods    │   │ Time-     │         │ Dashbd  │      │ DNS    │
-│  │ PVC     │   │ series DB │         │ Access  │      │ etc    │
-│  │ Config  │   │          │         │ Control │      │        │
+│  │ Pods    │   │ BD de    │         │ Panel   │      │ DNS    │
+│  │ PVC     │   │ series   │         │ Acceso  │      │ etc    │
+│  │ Config  │   │ tiempo   │         │ Control │      │        │
 │  └────┬────┘   └──────────┘         └────┬────┘      └────────┘
 │       │                                   │
 │       │                    ┌──────────────┘
-│       │                    │ Query
+│       │                    │ Consulta
 │       │            ┌───────┴────────┐
 │       │            │  Prometheus    │
 │       └────────────┤  API :9090     │
-│  Scrape metrics    │                │
-│  15 segundos       └────────────────┘
+│  Scrap de métricas │                │
+│  cada 15 segundos  └────────────────┘
 │       │
 │       ▼
 │  ┌─────────────────────────────────────────┐
-│  │ Kubernetes API / Kubelet                │
+│  │ API de Kubernetes / Kubelet             │
 │  │ • Métricas de nodos                     │
 │  │ • Estado de pods                        │
 │  │ • Uso de recursos                       │
@@ -45,20 +45,20 @@ Documentación detallada de la arquitectura de Jenkins on Kubernetes.
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 
-             ║ Host Machine (Laptop/Server)
-             ║
-        ┌────╨────────────────────────┐
-        │   /etc/hosts                │
-        │ 127.0.0.1 jenkins.local     │
-        │ 127.0.0.1 grafana.local     │
-        │ 127.0.0.1 prometheus.local  │
-        └────┬───────────────────────┘
-             │ Browser requests
-             ▼
-        ┌─────────────────────┐
-        │   Minikube IP       │
-        │  192.168.49.2:80    │
-        └─────────────────────┘
+        ║ Máquina Host (Laptop/Servidor)
+        ║
+   ┌────╨──────────────────────────┐
+   │   /etc/hosts                  │
+   │ 127.0.0.1 jenkins.local       │
+   │ 127.0.0.1 grafana.local       │
+   │ 127.0.0.1 prometheus.local    │
+   └────┬───────────────────────────┘
+        │ Solicitudes del navegador
+        ▼
+   ┌─────────────────────┐
+   │   IP de Minikube    │
+   │  192.168.49.2:80    │
+   └─────────────────────┘
 ```
 
 ---
@@ -67,41 +67,41 @@ Documentación detallada de la arquitectura de Jenkins on Kubernetes.
 
 ### 1. Jenkins
 
-**Propósito**: CI/CD server principal
+**Propósito**: Servidor principal de CI/CD
 
-**Ubicación**: `jenkins` namespace
+**Ubicación**: Namespace `jenkins`
 
 **Configuración**:
 ```yaml
 Deployment: jenkins
-  Image: jenkins/jenkins:2.504-jdk21
-  Replicas: 1
-  Port: 8080
+  Imagen: jenkins/jenkins:2.504-jdk21
+  Réplicas: 1
+  Puerto: 8080
   
-Resources:
-  Requests: 500m CPU, 512Mi RAM
-  Limits: 1 CPU, 1Gi RAM
+Recursos:
+  Solicitudes: 500m CPU, 512Mi RAM
+  Límites: 1 CPU, 1Gi RAM
 
-Storage:
+Almacenamiento:
   PVC: jenkins-pvc (5Gi)
-  Mount: /var/jenkins_home
+  Montaje: /var/jenkins_home
 
-Configuration:
+Configuración:
   JCasC: /var/jenkins_home/casc_configs
-  Secrets: jenkins-casc-config (ConfigMap)
+  Secretos: jenkins-casc-config (ConfigMap)
 
-Security:
-  User: jenkins (UID 1000)
-  readinessProbe: /login (60s initial)
-  livenessProbe: /login (120s initial)
+Seguridad:
+  Usuario: jenkins (UID 1000)
+  readinessProbe: /login (60s inicial)
+  livenessProbe: /login (120s inicial)
 ```
 
-**Data Flow**:
+**Flujo de Datos**:
 ```
-Jenkins Pod
-├── Startup → Load JCasC from ConfigMap
-├── Running → Accept requests via Service
-└── Storage → PVC persiste datos
+Pod de Jenkins
+├── Inicio → Cargar JCasC desde ConfigMap
+├── Ejecutando → Aceptar solicitudes via Servicio
+└── Almacenamiento → PVC persiste datos
 ```
 
 ### 2. Kustomize
@@ -114,9 +114,9 @@ kustomize/
 ├── base/
 │   ├── kustomization.yaml       # Referencia todos los manifests
 │   ├── ingress.yaml             # Ingress base
-│   ├── jenkins-setup-k8s.yaml   # (symlink) Namespace, SA, PVC, Service
-│   ├── deployment.yaml          # (symlink) Jenkins Deployment
-│   └── jcasc/configmap.yaml     # (symlink) JCasC Config
+│   ├── jenkins-setup-k8s.yaml   # (enlace) Namespace, SA, PVC, Servicio
+│   ├── deployment.yaml          # (enlace) Deployment
+│   └── jcasc/configmap.yaml     # (enlace) Configuración JCasC
 │
 └── overlays/
     ├── dev/
@@ -130,12 +130,12 @@ kustomize/
     │   └── (patchesJson6902)        # Recursos medios
     │
     └── prod/
-        ├── kustomization.yaml       # Patches para production
+        ├── kustomization.yaml       # Patches para producción
         ├── ingress-patch.yaml       # Hostname: jenkins.local + HTTPS
         └── (patchesJson6902)        # Recursos altos + rate limiting
 ```
 
-**Build Process**:
+**Proceso de Construcción**:
 ```
 kubectl kustomize kustomize/overlays/dev
     ↓
@@ -143,7 +143,7 @@ Leer: kustomize/overlays/dev/kustomization.yaml
     ↓
 Resolver bases: ../../base/kustomization.yaml
     ↓
-Leer resources desde base
+Leer recursos desde base
     ↓
 Aplicar patchesJson6902 de overlay
     ↓
@@ -159,10 +159,10 @@ Mostrar resultado
 **Configuración Base**:
 ```yaml
 Host: jenkins.local
-Path: /
+Ruta: /
 Backend: jenkins:8080
 
-Annotations:
+Anotaciones:
   nginx.ingress.kubernetes.io/proxy-body-size: "0"
   nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
 ```
@@ -170,19 +170,19 @@ Annotations:
 **Variaciones por Ambiente**:
 - **dev**: HTTP, sin HTTPS
 - **staging**: HTTPS con cert-manager staging
-- **prod**: HTTPS con cert-manager production, rate limiting
+- **prod**: HTTPS con cert-manager producción, rate limiting
 
-**Request Flow**:
+**Flujo de Solicitud**:
 ```
-Browser → jenkins.local:80
+Navegador → jenkins.local:80
     ↓
-Minikube IP:80 (NGINX Ingress)
+IP de Minikube:80 (NGINX Ingress)
     ↓
-Route rule: host=jenkins.local → service:jenkins:8080
+Regla de ruta: host=jenkins.local → servicio:jenkins:8080
     ↓
-Jenkins Service (ClusterIP)
+Servicio de Jenkins (ClusterIP)
     ↓
-Jenkins Pod:8080
+Pod de Jenkins:8080
 ```
 
 ### 4. JCasC (Jenkins Configuration as Code)
@@ -197,11 +197,11 @@ jenkins:
   systemMessage: "..."        # Mensaje del sistema
   securityRealm:              # Autenticación
   authorizationStrategy:      # Autorización
-  crumbIssuer:                # CSRF protection
+  crumbIssuer:                # Protección CSRF
 
 unclassified:
   location:                   # URL del servidor
-  mailer:                     # Email config
+  mailer:                     # Configuración de email
   
 credentials:                  # Credenciales
   system:
@@ -214,9 +214,9 @@ security:                     # Seguridad general
 
 **Cargar en Jenkins**:
 ```
-Jenkins startup
+Inicio de Jenkins
     ↓
-Env var: CASC_JENKINS_CONFIG=/var/jenkins_home/casc_configs
+Variable de entorno: CASC_JENKINS_CONFIG=/var/jenkins_home/casc_configs
     ↓
 Jenkins lee ConfigMap montado
     ↓
@@ -229,44 +229,44 @@ No se puede cambiar via UI (inmutable)
 
 **Propósito**: Recolectar métricas de Jenkins y Kubernetes
 
-**Ubicación**: `monitoring` namespace
+**Ubicación**: Namespace `monitoring`
 
 **Configuración**:
 ```yaml
 scrape_configs:
-  - job_name: prometheus       # Auto-monitoring
+  - job_name: prometheus       # Auto-monitoreo
   - job_name: kubernetes-apiservers
   - job_name: kubernetes-nodes
   - job_name: kubernetes-pods
-  - job_name: jenkins          # Jenkins metrics
+  - job_name: jenkins          # Métricas de Jenkins
 
 alert_rules:
-  - JenkinsPodDown             # Alerta si pod cae
+  - JenkinsPodDown             # Alerta si el pod cae
   - JenkinsHighMemory          # >90% RAM
   - JenkinsHighCPU             # >80% CPU
   - KubernetesNodeNotReady
   - KubernetesPVCFull
 ```
 
-**Storage**:
+**Almacenamiento**:
 ```
 emptyDir {}  # Datos temporales (se pierden al reiniciar)
-Retention: 30 días de métricas
+Retención: 30 días de métricas
 ```
 
 **Scraping**:
 ```
-Prometheus Pod
+Pod de Prometheus
     ↓ (cada 15s)
 Obtener targets desde:
   • kubernetes-apiservers
   • kubernetes-nodes
   • kubernetes-pods
-  • Static config (jenkins)
+  • Configuración estática (jenkins)
     ↓
-POST /metrics (o custom path)
+POST /metrics (o ruta personalizada)
     ↓
-Parse métricas (formato Prometheus)
+Analizar métricas (formato Prometheus)
     ↓
 Guardar en TSDB
     ↓
@@ -275,9 +275,9 @@ Mantener por 30 días
 
 ### 6. Grafana
 
-**Propósito**: Visualizar métricas en dashboards
+**Propósito**: Visualizar métricas en paneles
 
-**Ubicación**: `monitoring` namespace
+**Ubicación**: Namespace `monitoring`
 
 **Configuración**:
 ```yaml
@@ -286,32 +286,32 @@ datasources:
     url: http://prometheus:9090
     type: prometheus
 
-Users:
+Usuarios:
   admin: admin123 (⚠️ Cambiar después)
 
-Access:
-  Anonymous: true (viewers)
-  Required auth: false para dashboards
+Acceso:
+  Anónimo: true (viewers)
+  Autenticación requerida: false para paneles
 ```
 
-**Architecture**:
+**Arquitectura**:
 ```
-Grafana Pod
+Pod de Grafana
     ↓
 Datasource Prometheus: http://prometheus:9090
     ↓
-Query metrics (PromQL)
+Consultar métricas (PromQL)
     ↓
-Render dashboards
+Renderizar paneles
     ↓
-Access via http://grafana.local:3000
+Acceso via http://grafana.local:3000
 ```
 
 ---
 
 ## Flujo de Datos
 
-### Setup Flow
+### Flujo de Setup
 
 ```
 Usuario ejecuta:
@@ -320,13 +320,13 @@ Usuario ejecuta:
     1. Verifica minikube y kubectl
     2. Habilita addon ingress en minikube
     3. Agrega hosts a /etc/hosts
-    4. Espera ingress controller ready
+    4. Espera que controlador ingress esté listo
     ✓ Listo para desplegar
 
 Usuario ejecuta:
     ./scripts/deploy-env.sh dev
         ↓
-    1. Verifica prerequisites
+    1. Verifica prerequisitos
     2. Ejecuta: kubectl kustomize kustomize/overlays/dev
         ↓
         Genera YAML combinado
@@ -336,75 +336,75 @@ Usuario ejecuta:
         • Namespace jenkins
         • PVC jenkins-pvc
         • ConfigMap jenkins-casc-config
-        • Service jenkins
+        • Servicio jenkins
         • Deployment jenkins
         • Ingress jenkins
-    4. Espera rollout status
+    4. Espera estado de rollout
     5. Muestra URL de acceso
 ```
 
-### Runtime Flow
+### Flujo de Runtime
 
 ```
-User accede a: http://jenkins-dev.local
+Usuario accede a: http://jenkins-dev.local
     ↓
-DNS resuelve a: minikube IP (192.168.49.2)
+DNS resuelve a: IP de minikube (192.168.49.2)
     ↓
-NGINX Ingress recibe request en puerto 80
+NGINX Ingress recibe solicitud en puerto 80
     ↓
 Busca regla: Host=jenkins-dev.local
     ↓
-Ruta a: Service jenkins (jenkins namespace)
+Ruta a: Servicio jenkins (namespace jenkins)
     ↓
-ClusterIP del Service (usualmente 10.x.x.x)
+ClusterIP del Servicio (usualmente 10.x.x.x)
     ↓
-Selecciona pod con label: app=jenkins
+Selecciona pod con etiqueta: app=jenkins
     ↓
 Balanceo de carga (round-robin si hay múltiples)
     ↓
-Envía a Jenkins Pod:8080
+Envía a Pod de Jenkins:8080
     ↓
 Jenkins responde con UI
     ↓
-Renderiza en navegador
+Se renderiza en navegador
 ```
 
-### Monitoring Flow
+### Flujo de Monitoreo
 
 ```
-Prometheus Pod (cada 15s)
+Pod de Prometheus (cada 15s)
     ↓
 Ejecuta queries de scrape
     ↓
     ├─ kubernetes-apiservers:6443/metrics
-    │   └─ Kubernetes API metrics
+    │   └─ Métricas de API de Kubernetes
     │
     ├─ kubernetes-nodes:kubelet:10250/metrics
-    │   └─ Node metrics (CPU, memory)
+    │   └─ Métricas de nodos (CPU, memoria)
     │
     ├─ kubernetes-pods:8080/prometheus
-    │   └─ Jenkins metrics (builds, executors)
+    │   └─ Métricas de Jenkins (builds, ejecutores)
     │
     └─ localhost:9090/metrics
-        └─ Prometheus self-monitoring
+        └─ Auto-monitoreo de Prometheus
 
-    ↓ (Parse y valida)
-    ↓ (Guarda en TSDB)
-    ↓ (Mantiene 30 días)
+    ↓ (Analizar y validar)
+    ↓ (Guardar en TSDB)
+    ↓ (Mantener 30 días)
 
 Grafana (usuario)
     ↓
-Query: http://prometheus:9090/api/v1/query
+Consulta: http://prometheus:9090/api/v1/query
     ↓
 PromQL: rate(jenkins_builds_success_total[5m])
     ↓
-Prometheus ejecuta query
+Prometheus ejecuta consulta
     ↓
 Devuelve series temporales
     ↓
 Grafana renderiza gráfico
     ↓
-Usuario ve dashboard
+Usuario ve panel
 ```
 
 ---
@@ -422,20 +422,20 @@ Usuario ve dashboard
 | Desarrollo | Excelente | Bueno |
 | **Elegimos** | ✅ | - |
 
-**Razón**: Mejor balance entre simplicidad y producción-like.
+**Razón**: Mejor balance entre simplicidad y production-like.
 
 ### 2. ¿Por qué Kustomize y no Helm?
 
 | Aspecto | Kustomize | Helm |
 |---------|-----------|------|
-| Curva aprendizaje | Baja | Media |
+| Curva de aprendizaje | Baja | Media |
 | YAML nativo | ✅ | Templates |
 | Reusabilidad | Base + Overlays | Charts |
-| Package manager | No | Sí |
-| Production | Posible | Mejor |
+| Gestor de paquetes | No | Sí |
+| Producción | Posible | Mejor |
 | **Elegimos** | ✅ | - |
 
-**Razón**: Mejor para aprender Kubernetes. Helm disponible como opción later.
+**Razón**: Mejor para aprender Kubernetes. Helm disponible como opción posterior.
 
 ### 3. ¿Por qué JCasC y no UI manual?
 
@@ -445,7 +445,7 @@ Usuario ve dashboard
 | Versionable | ✅ | ❌ |
 | Colaboración | ✅ | ❌ |
 | Automatización | ✅ | ❌ |
-| Curva aprendizaje | Media | Baja |
+| Curva de aprendizaje | Media | Baja |
 | **Elegimos** | ✅ | - |
 
 **Razón**: Infrastructure as Code, no reinventar la rueda.
@@ -456,7 +456,7 @@ Usuario ve dashboard
 |---------|---------|----------|
 | Profesional | ✅ | ❌ |
 | Hostnames | ✅ | ❌ |
-| HTTPS | ✅ | Manua |
+| HTTPS | ✅ | Manual |
 | Producción | ✅ | ❌ |
 | Complejidad | Media | Baja |
 | **Elegimos** | ✅ | - |
@@ -470,7 +470,7 @@ Usuario ve dashboard
 ### Horizontal (Múltiples Pods)
 
 ```yaml
-# Actual (1 replica)
+# Actual (1 réplica)
 spec:
   replicas: 1
 
@@ -480,8 +480,8 @@ spec:
 
 # Con PersistentVolume compartido
 # Nota: Jenkins es stateful, requiere:
-# - ReadWriteMany volume
-# - O Jenkins distributed (master + agents)
+# - Volumen ReadWriteMany
+# - O Jenkins distribuido (master + agentes)
 ```
 
 ### Vertical (Más recursos)
@@ -496,65 +496,66 @@ spec:
   value: "4Gi"
 ```
 
-### Agents Distribuidos
+### Agentes Distribuidos
 
 ```
-Jenkins Master Pod
+Pod Master de Jenkins
     │
-    ├─ Agent 1 Pod (Kubernetes agent plugin)
-    ├─ Agent 2 Pod
-    ├─ Agent 3 Pod
-    └─ External agents (JNLP)
+    ├─ Pod Agente 1 (Plugin de Kubernetes)
+    ├─ Pod Agente 2
+    ├─ Pod Agente 3
+    └─ Agentes externos (JNLP)
 ```
 
 ---
 
-## Performance
+## Rendimiento
 
 ### Optimizaciones Implementadas
 
 - **Readiness Probe**: Evita tráfico a pod que no está listo
 - **Resource Requests**: Garantiza recursos suficientes
-- **Resource Limits**: Previene que consume todo
+- **Resource Limits**: Previene que consuma todo
 - **emptyDir para cache**: Más rápido que PVC
 
-### Bottlenecks Potenciales
+### Cuellos de Botella Potenciales
 
-1. **PVC I/O**: Jenkins home es disk-intensive
-   - Solución: Usar SSD storage class
+1. **I/O de PVC**: Jenkins home requiere mucho acceso a disco
+   - Solución: Usar clase de almacenamiento SSD
    
-2. **Single Pod**: Un pod puede ser bottleneck
-   - Solución: Usar Jenkins agents distribuidos
+2. **Pod Único**: Un pod puede ser cuello de botella
+   - Solución: Usar agentes de Jenkins distribuidos
 
-3. **Storage Network**: Especialmente en cloud
-   - Solución: Usar local volumes con replicación
+3. **Almacenamiento en Red**: Especialmente en cloud
+   - Solución: Usar volúmenes locales con replicación
 
 ---
 
-## High Availability (Future)
+## Alta Disponibilidad (Futuro)
 
 ```
 ┌─────────────────────────────────────────┐
-│      Jenkins Kubernetes Cluster         │
+│      Cluster Kubernetes Jenkins         │
 ├─────────────────────────────────────────┤
 │                                         │
 │  ┌─────────────────────────────────┐   │
-│  │     Jenkins Master Pod (1)      │   │
+│  │  Pod Master de Jenkins (1)      │   │
 │  └──────────────┬──────────────────┘   │
 │                 │                      │
 │         ┌───────┼───────┐              │
 │         ▼       ▼       ▼              │
 │    ┌────────────────────────────┐     │
-│    │ Agent Pods (Kubernetes)    │     │
-│    │ ├─ Build agent 1           │     │
-│    │ ├─ Build agent 2           │     │
-│    │ └─ Build agent 3           │     │
+│    │ Pods Agente (Kubernetes)   │     │
+│    │ ├─ Agente de build 1       │     │
+│    │ ├─ Agente de build 2       │     │
+│    │ └─ Agente de build 3       │     │
 │    └────────────────────────────┘     │
 │                                         │
 │  ┌─────────────────────────────────┐   │
-│  │ Shared Storage (ReadWriteMany)  │   │
+│  │ Almacenamiento Compartido       │   │
+│  │ (ReadWriteMany)                 │   │
 │  │ ├─ EBS (AWS)                    │   │
-│  │ ├─ GCP PD (Google)              │   │
+│  │ ├─ PD de GCP (Google)           │   │
 │  │ └─ NFS (On-premise)             │   │
 │  └─────────────────────────────────┘   │
 │                                         │
@@ -563,87 +564,87 @@ Jenkins Master Pod
 
 ---
 
-## Disaster Recovery
+## Recuperación ante Desastres
 
-### Backup Strategy
+### Estrategia de Respaldo
 
 ```
-Automated Backup (futuro)
+Respaldo Automatizado (futuro)
     ↓
 Cada 24h:
     1. Snapshot de PVC
     2. Exportar jenkins_home a S3/GCS
-    3. Retener últimas 30 backups
+    3. Retener últimos 30 respaldos
 
-Recovery:
-    1. Restore PVC desde snapshot
-    2. O rebuild desde código (JCasC)
+Recuperación:
+    1. Restaurar PVC desde snapshot
+    2. O reconstruir desde código (JCasC)
 ```
 
-### Recovery Time Objective (RTO)
+### Objetivo de Tiempo de Recuperación (RTO)
 
-- **Actual**: ~5 minutos (redeploy)
-- **Con backups**: ~10 minutos (restore + verify)
+- **Actual**: ~5 minutos (redeployment)
+- **Con respaldos**: ~10 minutos (restaurar + verificar)
 
-### Recovery Point Objective (RPO)
+### Objetivo de Punto de Recuperación (RPO)
 
 - **Actual**: Ninguno (datos persistentes)
 - **Con snapshots**: 24 horas máximo
 
 ---
 
-## Monitoring Strategy
+## Estrategia de Monitoreo
 
 ```
-Levels of Monitoring:
+Niveles de Monitoreo:
 
-Level 1: Infrastructure (Prometheus)
-  ├─ CPU/Memory/Disk
-  ├─ Network I/O
-  └─ Pod status
+Nivel 1: Infraestructura (Prometheus)
+  ├─ CPU/Memoria/Disco
+  ├─ I/O de Red
+  └─ Estado de pods
 
-Level 2: Application (Jenkins metrics)
-  ├─ Build count/success rate
-  ├─ Build duration
-  ├─ Executor usage
-  └─ Queue length
+Nivel 2: Aplicación (Métricas de Jenkins)
+  ├─ Conteo de builds/tasa de éxito
+  ├─ Duración de builds
+  ├─ Uso de ejecutores
+  └─ Longitud de cola
 
-Level 3: User Experience
-  ├─ UI availability
-  ├─ Response time
-  └─ Error rates
+Nivel 3: Experiencia del Usuario
+  ├─ Disponibilidad de UI
+  ├─ Tiempo de respuesta
+  └─ Tasas de error
 
-Visualization: Grafana
-Alerting: Prometheus Alertmanager (futuro)
-Logging: ELK Stack (futuro)
+Visualización: Grafana
+Alertas: Prometheus Alertmanager (futuro)
+Logging: Pila ELK (futuro)
 ```
 
 ---
 
-## Cost Optimization
+## Optimización de Costos
 
-### Current (Minikube Local)
+### Actual (Minikube Local)
 
-- **Infrastructure**: $0 (local machine)
-- **Storage**: Local disk
-- **Network**: Localhost
+- **Infraestructura**: $0 (máquina local)
+- **Almacenamiento**: Disco local
+- **Red**: Localhost
 - **Total**: $0
 
-### For Production (EKS Example)
+### Para Producción (Ejemplo EKS)
 
 ```
-EKS Control Plane: $0.10/hour = $73/month
-Compute (3 nodes t3.medium): $0.0416 * 3 * 730 = ~$91/month
-Storage (50GB EBS gp3): ~$5/month
-Network: ~$10/month (variable)
-Total: ~$180/month
+Plano de Control EKS: $0.10/hora = $73/mes
+Cómputo (3 nodos t3.medium): $0.0416 * 3 * 730 = ~$91/mes
+Almacenamiento (50GB EBS gp3): ~$5/mes
+Red: ~$10/mes (variable)
+Total: ~$180/mes
 ```
 
 **Optimizaciones**:
-- Usar Spot instances (-70% cost)
-- Reserved instances (-40% cost)
-- Auto-scaling (scale-down en off-hours)
-- Right-sizing (elegir tamaño correcto)
+- Usar instancias Spot (-70% costo)
+- Instancias Reservadas (-40% costo)
+- Auto-scaling (reducir en horas no laborales)
+- Dimensionamiento correcto (elegir tamaño adecuado)
 
 ---
 

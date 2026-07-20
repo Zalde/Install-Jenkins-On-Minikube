@@ -1,63 +1,63 @@
-# Security Policy
+# Política de Seguridad
 
 ## Seguridad en este Proyecto
 
-Este documento explica cómo se manejan la seguridad en Jenkins on Kubernetes.
+Este documento explica cómo se manejan la seguridad en Jenkins en Kubernetes.
 
-**Importante**: Este proyecto está diseñado para **laboratorios y entrenamiento**, no es production-ready por defecto. Ver sección [Producción](#seguridad-en-producción).
+**Importante**: Este proyecto está diseñado para **laboratorios y entrenamiento**, no es production-ready por defecto. Ver sección [Seguridad en Producción](#seguridad-en-producción).
 
 ---
 
 ## 🔒 Seguridad Implementada
 
-### Kubernetes Security
+### Seguridad de Kubernetes
 
 | Medida | Descripción | Ubicación |
 |--------|-------------|-----------|
-| **Non-root** | Jenkins corre como UID 1000 | `deployment.yaml` |
+| **No root** | Jenkins se ejecuta como UID 1000 | `deployment.yaml` |
 | **SecurityContext** | Previene escalada de privilegios | `deployment.yaml` |
 | **ServiceAccount** | Dedicado, no usa default | `jenkins-setup-k8s.yaml` |
 | **RBAC** | Permisos limitados a roles | `monitoring/prometheus/deployment.yaml` |
-| **Resource Limits** | CPU/Memory restringidos | `deployment.yaml` / `kustomize/overlays/*/kustomization.yaml` |
-| **Network Policy** | (Futuro) Restringir tráfico | |
+| **Límites de Recursos** | CPU/Memory restringidos | `deployment.yaml` / `kustomize/overlays/*/kustomization.yaml` |
+| **Políticas de Red** | (Futuro) Restringir tráfico | |
 
-### Jenkins Security
+### Seguridad de Jenkins
 
 | Medida | Descripción | Ubicación |
 |--------|-------------|-----------|
-| **Anonymous Disabled** | Solo usuarios autenticados | `jcasc/configmap.yaml` |
-| **CSRF Protection** | Habilitado por defecto | Jenkins config |
+| **Sin Anónimos** | Solo usuarios autenticados | `jcasc/configmap.yaml` |
+| **Protección CSRF** | Habilitada por defecto | Configuración Jenkins |
 | **JCasC** | Configuración inmutable | `jcasc/` |
-| **Version Pinning** | Imagen exacta (no flotante) | `deployment.yaml` |
+| **Pin de Versión** | Imagen exacta (no flotante) | `deployment.yaml` |
 
-### Data Security
+### Seguridad de Datos
 
 | Medida | Descripción | Ubicación |
 |--------|-------------|-----------|
-| **Encryption at rest** | (Futuro) Sealed Secrets | |
-| **Encryption in transit** | HTTPS en Ingress (prod) | `kustomize/overlays/prod/ingress-patch.yaml` |
-| **Backup** | (Futuro) Automated backups | |
-| **Retention** | 30 días de métricas | `monitoring/prometheus/configmap.yaml` |
+| **Encriptación en reposo** | (Futuro) Sealed Secrets | |
+| **Encriptación en tránsito** | HTTPS en Ingress (prod) | `kustomize/overlays/prod/ingress-patch.yaml` |
+| **Respaldo** | (Futuro) Respaldos automáticos | |
+| **Retención** | 30 días de métricas | `monitoring/prometheus/configmap.yaml` |
 
 ---
 
-## ⚠️ Seguridad Actual (Limitaciones)
+## ⚠️ Limitaciones Actuales de Seguridad
 
 ### No Recomendado para Producción
 
 - ❌ **Minikube local**: Aislamiento limitado
 - ❌ **emptyDir para logs**: Se pierden al reiniciar
-- ❌ **Admin password simple**: `admin123` en Grafana
+- ❌ **Contraseña simple**: `admin123` en Grafana
 - ❌ **HTTP en dev**: Sin HTTPS
-- ❌ **No Sealed Secrets**: Credenciales en ConfigMaps
-- ❌ **No Network Policies**: Tráfico abierto entre pods
+- ❌ **Sin Sealed Secrets**: Credenciales en ConfigMaps
+- ❌ **Sin Políticas de Red**: Tráfico abierto entre pods
 - ❌ **Almacenamiento local**: Sin replicación
 
 ### Vulnerabilidades Conocidas
 
 #### 1. Credenciales en ConfigMaps
 
-**Problema**: Credenciales guardadas en plain text
+**Problema**: Credenciales guardadas en texto plano
 
 **Mitigación Actual**:
 ```bash
@@ -65,40 +65,40 @@ kubectl get configmap jenkins-casc-config -n jenkins -o yaml
 # ⚠️ Credenciales visibles
 ```
 
-**Solución Production**:
+**Solución Producción**:
 ```bash
 # Usar Sealed Secrets
 brew install sealed-secrets
 kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.18.0/sealed-secrets-0.18.0.yaml
 
 # Encriptar secretos
-echo -n mypassword | kubectl create secret generic my-secret \
+echo -n micontraseña | kubectl create secret generic mi-secret \
   --dry-run=client --from-file=/dev/stdin | \
   kubeseal -o yaml
 ```
 
-#### 2. Storage Local (Minikube)
+#### 2. Almacenamiento Local (Minikube)
 
 **Problema**: PVC local, sin replicación
 
 **Mitigación**:
 ```bash
-# Backup manual
+# Respaldo manual
 kubectl exec deployment/jenkins -n jenkins -- \
   tar czf /tmp/jenkins-backup.tar.gz /var/jenkins_home/
 
 # Para Producción: Usar EBS, GCS, etc.
 ```
 
-#### 3. Default Credentials
+#### 3. Credenciales Por Defecto
 
-**Problema**: Password simple de admin
+**Problema**: Contraseña simple de admin
 
 **Mitigación**:
 ```bash
 # Cambiar contraseña después del setup
 # 1. Acceder a Jenkins
-# 2. Manage → Users → admin → Configure
+# 2. Administrar → Usuarios → admin → Configurar
 # 3. Cambiar contraseña
 ```
 
@@ -108,10 +108,10 @@ kubectl exec deployment/jenkins -n jenkins -- \
 
 ### Cambios Recomendados
 
-#### 1. Usar Cluster Managed (no Minikube)
+#### 1. Usar Cluster Administrado (no Minikube)
 
 ```yaml
-# Production clusters
+# Clusters production
 - EKS (Amazon)
 - AKS (Microsoft)
 - GKE (Google)
@@ -131,7 +131,7 @@ credentials:
   system:
     domainCredentials:
       - plaintext:
-          secret: "mypassword"  # ❌ Peligroso
+          secret: "micontraseña"  # ❌ Peligroso
 
 # Hacer:
 apiVersion: bitnami.com/v1alpha1
@@ -143,7 +143,7 @@ spec:
     github-token: AgCPk3DKs...  # ✅ Encriptado
 ```
 
-#### 3. Usar Network Policies
+#### 3. Usar Políticas de Red
 
 ```yaml
 # Restringir tráfico entre pods
@@ -192,7 +192,7 @@ spec:
       verbs: ["create"]
 ```
 
-#### 5. Pod Security Standards
+#### 5. Estándares de Seguridad de Pods
 
 ```yaml
 # Kubernetes 1.25+
@@ -216,7 +216,7 @@ spec:
     rule: 'MustRunAsNonRoot'
 ```
 
-#### 6. Scanning de Imágenes
+#### 6. Escaneo de Imágenes
 
 ```bash
 # Usar Trivy para verificar vulnerabilidades
@@ -224,7 +224,7 @@ trivy image jenkins/jenkins:2.504-jdk21
 
 # Agregar a CI/CD
 # .github/workflows/security.yml
-name: Security Scan
+name: Escaneo de Seguridad
 on: [push]
 jobs:
   scan:
@@ -260,7 +260,7 @@ spec:
             class: nginx
 ```
 
-#### 8. Secrets Encryption at Rest
+#### 8. Encriptación de Secretos en Reposo
 
 ```yaml
 # Encriptar secrets en etcd
@@ -289,16 +289,16 @@ resources:
 ```bash
 # No guardar en Git
 git add secret.yaml
-git commit -m "Add password"  # ❌
+git commit -m "Agregar contraseña"  # ❌
 
-# No usar plain text
+# No usar texto plano
 kubectl set env deployment/jenkins ADMIN_PASS=password123  # ❌
 
 # No hardcodear
 password: "admin123"  # ❌
 
 # No compartir entre ambientes
-export PASSWORD="mypass"  # ❌
+export PASSWORD="mipass"  # ❌
 ```
 
 ### ✅ SÍ Hacer
@@ -308,7 +308,7 @@ export PASSWORD="mypass"  # ❌
 kubectl create secret generic jenkins-secret \
   --from-literal=admin-password=$(openssl rand -base64 32)
 
-# O Sealed Secrets (production)
+# O Sealed Secrets (producción)
 kubectl create secret generic jenkins-secret \
   --from-literal=admin-password=... | \
   kubeseal -o yaml > sealed-secret.yaml
@@ -323,7 +323,7 @@ env:
 
 # Para Grafana, cambiar después del setup
 # 1. Acceder a Grafana
-# 2. Admin → Settings → Change Password
+# 2. Admin → Configuración → Cambiar Contraseña
 ```
 
 ---
@@ -336,7 +336,7 @@ env:
 # Ver eventos
 kubectl get events -n jenkins -w
 
-# Ver logs de API server
+# Ver logs del servidor API
 kubectl logs -n kube-system <apiserver-pod>
 
 # Habilitar audit logging en kubeadm
@@ -348,55 +348,55 @@ kubectl logs -n kube-system <apiserver-pod>
 
 ```bash
 # Ver intentos de acceso denegados
-kubectl logs -f deployment/jenkins -n jenkins | grep -i "access denied"
+kubectl logs -f deployment/jenkins -n jenkins | grep -i "acceso denegado"
 
 # Alertas de Prometheus para seguridad
 # En monitoring/prometheus/configmap.yaml
-- alert: UnauthorizedAPIAccess
+- alert: AccesoNoAutorizado
   expr: increase(apiserver_audit_event_total{verb="get",user_username!~"system:.*"}[5m]) > 10
 ```
 
 ---
 
-## 📋 Checklist de Seguridad Pre-Producción
+## 📋 Lista de Verificación Pre-Producción
 
 Antes de usar en producción:
 
-### Infrastructure
-- [ ] Usar cluster managed (EKS, AKS, GKE)
+### Infraestructura
+- [ ] Usar cluster administrado (EKS, AKS, GKE)
 - [ ] Habilitar RBAC
-- [ ] Configurar Network Policies
-- [ ] Habilitar Pod Security Standards
-- [ ] Encriptar secrets at rest
+- [ ] Configurar Políticas de Red
+- [ ] Habilitar Estándares de Seguridad de Pods
+- [ ] Encriptar secretos en reposo
 - [ ] Encriptar tráfico (HTTPS)
 
-### Container
+### Contenedores
 - [ ] Escanear imágenes con Trivy
 - [ ] Usar distroless si es posible
-- [ ] Limitar permisos (non-root)
-- [ ] Remover debugging tools
+- [ ] Limitar permisos (no root)
+- [ ] Remover herramientas de debugging
 - [ ] Firmar imágenes
 
-### Secrets
+### Secretos
 - [ ] Usar Sealed Secrets o Vault
 - [ ] Rotar credenciales regularmente
 - [ ] No guardar en Git
 - [ ] Usar RBAC para acceso
-- [ ] Auditar acceso a secrets
+- [ ] Auditar acceso a secretos
 
-### Monitoring
+### Monitoreo
 - [ ] Prometheus + Grafana
 - [ ] Alertmanager para notificaciones
 - [ ] Loki para logs centralizados
 - [ ] Auditoría de cambios
-- [ ] Security scanning en CI/CD
+- [ ] Escaneo de seguridad en CI/CD
 
-### Compliance
-- [ ] Cumplir con compliance requerido (SOC2, PCI, etc.)
+### Cumplimiento
+- [ ] Cumplir con cumplimiento requerido (SOC2, PCI, etc.)
 - [ ] Documentar políticas de seguridad
-- [ ] Realizar penetration testing
-- [ ] Incident response plan
-- [ ] Disaster recovery plan
+- [ ] Realizar pruebas de penetración
+- [ ] Plan de respuesta a incidentes
+- [ ] Plan de recuperación ante desastres
 
 ---
 
@@ -410,7 +410,7 @@ Si encuentras una vulnerabilidad de seguridad:
    - Descripción de la vulnerabilidad
    - Pasos para reproducir
    - Impacto potencial
-   - Sugerencias de fix (si tienes)
+   - Sugerencias de corrección (si tienes)
 
 La vulnerabilidad será investigada y parcheada de forma discreta.
 
@@ -418,14 +418,14 @@ La vulnerabilidad será investigada y parcheada de forma discreta.
 
 ## 📚 Referencias
 
-- [Kubernetes Security Best Practices](https://kubernetes.io/docs/concepts/security/)
-- [OWASP Kubernetes Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html)
-- [CIS Kubernetes Benchmark](https://www.cisecurity.org/cis-benchmarks/)
-- [Sealed Secrets Documentation](https://github.com/bitnami-labs/sealed-secrets)
-- [Jenkins Security Documentation](https://www.jenkins.io/doc/book/security/)
+- [Mejores Prácticas de Seguridad en Kubernetes](https://kubernetes.io/docs/concepts/security/)
+- [Hoja de Trucos de Seguridad de Kubernetes de OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html)
+- [Comparativa CIS de Kubernetes](https://www.cisecurity.org/cis-benchmarks/)
+- [Documentación de Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)
+- [Documentación de Seguridad de Jenkins](https://www.jenkins.io/doc/book/security/)
 
 ---
 
 **Última actualización**: Julio 2026
 
-¡Seguridad es responsabilidad de todos! 🔒
+¡La seguridad es responsabilidad de todos! 🔒

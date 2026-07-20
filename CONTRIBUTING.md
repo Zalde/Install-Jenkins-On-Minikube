@@ -1,4 +1,4 @@
-# Contributing to Jenkins on Kubernetes
+# Contribuyendo a Jenkins en Kubernetes
 
 ¡Gracias por tu interés en contribuir! 🎉
 
@@ -15,9 +15,9 @@ Este proyecto se adhiere a un código de conducta que todos esperamos que sigan:
 
 ## Cómo Contribuir
 
-### 1. Reportar Bugs
+### 1. Reportar Errores
 
-Si encuentras un bug:
+Si encuentras un error:
 
 1. **Verifica si ya está reportado**: Busca en [Issues](https://github.com/Zalde/Install-Jenkins-On-Minikube/issues)
 2. **Crea un issue** con:
@@ -29,7 +29,7 @@ Si encuentras un bug:
 **Ejemplo:**
 
 ```
-Title: Jenkins pod no inicia con Kustomize dev
+Título: Pod de Jenkins no inicia con Kustomize dev
 
 Descripción:
 Al ejecutar ./scripts/deploy-env.sh dev, el pod queda en CrashLoopBackOff
@@ -53,20 +53,20 @@ Entorno:
 
 Para sugerir mejoras:
 
-1. **Abre un Issue** o **Discussion** con:
+1. **Abre un Issue** o **Discusión** con:
    - Descripción clara de la mejora
    - Caso de uso / por qué es útil
    - Posibles implementaciones
 
-2. **Espera feedback** de los mantenedores
+2. **Espera retroalimentación** de los mantenedores
 
 ### 3. Contribuir Código
 
 #### Prerequisitos
 
-- Fork el repositorio
-- Clona tu fork localmente
-- Crea una rama de feature
+- Hacer fork del repositorio
+- Clonar tu fork localmente
+- Crear una rama de feature
 
 ```bash
 git clone https://github.com/TU_USUARIO/Install-Jenkins-On-Minikube.git
@@ -86,8 +86,8 @@ git checkout -b feature/mi-mejora
 **YAML (Kubernetes):**
 - ✅ Indentar con 2 espacios
 - ✅ Incluir comentarios explicativos
-- ✅ Seguir convenciones de naming
-- ✅ Incluir labels y annotations
+- ✅ Seguir convenciones de nombres
+- ✅ Incluir etiquetas y anotaciones
 - ✅ Usar namespaces adecuados
 
 **Documentación:**
@@ -96,22 +96,22 @@ git checkout -b feature/mi-mejora
 - ✅ Ejemplos prácticos
 - ✅ Traducciones si aplica
 
-#### Commit Messages
+#### Mensajes de Commit
 
 Usa commits claros y descriptivos:
 
 ```bash
 # ✅ Bueno
-git commit -m "Add monitoring stack with Prometheus and Grafana
+git commit -m "Agregar stack de monitoreo con Prometheus y Grafana
 
-- Create namespace and ConfigMaps
-- Deploy Prometheus with alerts
-- Deploy Grafana with datasources
-- Add Ingress for access"
+- Crear namespace y ConfigMaps
+- Desplegar Prometheus con alertas
+- Desplegar Grafana con datasources
+- Agregar Ingress para acceso"
 
 # ❌ Evitar
-git commit -m "fix stuff"
-git commit -m "update files"
+git commit -m "corregir cosas"
+git commit -m "actualizar archivos"
 git commit -m "wip"
 ```
 
@@ -126,66 +126,66 @@ git commit -m "wip"
    - Título claro y descriptivo
    - Descripción con cambios realizados
    - Referencia a issue relacionado (si existe)
-   - Pasos para testar la mejora
+   - Pasos para probar la mejora
 
-3. **Espera review**: Los mantenedores revisarán tu PR
+3. **Espera revisión**: Los mantenedores revisarán tu PR
 
-**Ejemplo PR:**
+**Ejemplo de PR:**
 
 ```markdown
-## Summary
+## Resumen
 
-Agregar soporte para usar imagen custom de Jenkins
+Agregar soporte para usar imagen personalizada de Jenkins
 
-## Changes
+## Cambios
 
-- Add environment variable JENKINS_IMAGE en deploy-env.sh
-- Update kustomize base para soportar image overrides
-- Document en README cómo cambiar image
+- Agregar variable de entorno JENKINS_IMAGE en deploy-env.sh
+- Actualizar base de kustomize para soportar overrides de imagen
+- Documentar en README cómo cambiar imagen
 
-## Testing
+## Pruebas
 
 ```bash
-JENKINS_IMAGE=myregistry.com/jenkins:custom ./scripts/deploy-env.sh dev
+JENKINS_IMAGE=miregistry.com/jenkins:personalizado ./scripts/deploy-env.sh dev
 kubectl get deployment jenkins -n jenkins -o jsonpath='{.spec.template.spec.containers[0].image}'
-# Output: myregistry.com/jenkins:custom
+# Resultado: miregistry.com/jenkins:personalizado
 ```
 
-## Checklist
+## Lista de Verificación
 
-- [x] Tests passed
-- [x] Documentation updated
-- [x] No breaking changes
+- [x] Tests pasados
+- [x] Documentación actualizada
+- [x] Sin cambios que rompan compatibilidad
 ```
 
 ### 4. Mejorar Documentación
 
 La documentación es crucial:
 
-- 📝 Corrige typos
+- 📝 Corrige errores tipográficos
 - 📚 Agrega ejemplos
 - 🌐 Traduce a otros idiomas
 - 📖 Mejora claridad
 
 ```bash
-git commit -m "Improve kustomize documentation with advanced examples"
+git commit -m "Mejorar documentación de kustomize con ejemplos avanzados"
 ```
 
 ### 5. Traducir
 
 ¿Hablas otro idioma? ¡Ayuda a traducir!
 
-- 🇬🇧 Inglés (en progreso)
 - 🇪🇸 Español (completo)
-- 🇫🇷 Francés (voluntarios bienvenidos)
-- 🇵🇹 Portugués (voluntarios bienvenidos)
+- 🇬🇧 Inglés (en progreso)
+- 🇫🇷 Francés (se buscan voluntarios)
+- 🇵🇹 Portugués (se buscan voluntarios)
 
 ## Estándares del Proyecto
 
 ### Estructura de Directorios
 
 ```
-project/
+proyecto/
 ├── README.md               # Documentación principal
 ├── CONTRIBUTING.md         # Esta guía
 ├── SECURITY.md            # Políticas de seguridad
@@ -193,11 +193,11 @@ project/
 ├── kustomize/             # Configuración Kustomize
 ├── monitoring/            # Stack de monitoreo
 ├── jcasc/                 # Jenkins Configuration as Code
-├── ingress/               # Ingress configuration
+├── ingress/               # Configuración de Ingress
 └── *.yaml                 # Manifests base
 ```
 
-### Naming Conventions
+### Convenciones de Nombres
 
 **Scripts bash:**
 ```bash
@@ -206,7 +206,7 @@ scripts/setup-ingress.sh            # Kebab-case
 scripts/deploy-env.sh
 ```
 
-**YAML files:**
+**Archivos YAML:**
 ```yaml
 # Descripciones claras
 # metadata.name: kebab-case
@@ -216,14 +216,14 @@ scripts/deploy-env.sh
 
 **Variables:**
 ```bash
-VARIABLE_NAME              # UPPER_SNAKE_CASE
-local_variable_name        # lower_snake_case
-functionName()             # camelCase para funciones bash
+NOMBRE_VARIABLE              # MAYÚSCULAS_CON_GUIONES
+variable_local               # minúsculas_con_guiones
+nombreFuncion()              # camelCase para funciones bash
 ```
 
-### Testing
+### Pruebas
 
-Antes de hacer PR:
+Antes de hacer un PR:
 
 1. **Prueba localmente**:
    ```bash
@@ -248,9 +248,9 @@ Antes de hacer PR:
    kubectl kustomize kustomize/overlays/dev
    ```
 
-### Code Review
+### Revisión de Código
 
-Cuando se review tu PR:
+Cuando se revise tu PR:
 
 - 🤝 Sé abierto a sugerencias
 - 💬 Responde comentarios con explicaciones claras
@@ -259,43 +259,43 @@ Cuando se review tu PR:
 
 ## Áreas Donde Necesitamos Ayuda
 
-### High Priority
+### Prioridad Alta
 
 - 🔒 Agregar Helm Chart oficial
-- 📊 Prometheus Operator integration
-- 🔐 Sealed Secrets support
+- 📊 Integración con Prometheus Operator
+- 🔐 Soporte para Sealed Secrets
 - 📋 Tests automatizados
 
-### Medium Priority
+### Prioridad Media
 
 - 🌐 Traducciones
 - 📚 Más ejemplos
-- 🐛 Bug fixes reportados
-- 💡 Mejoras de UX
+- 🐛 Corrección de errores reportados
+- 💡 Mejoras de experiencia
 
-### Low Priority
+### Prioridad Baja
 
 - 🎨 Actualizaciones visuales
 - 📖 Documentación adicional
-- 🔧 Refactoring
+- 🔧 Refactorización
 - ✨ Mejoras de código
 
-## Roadmap
+## Mapa de Ruta
 
-Ver [Roadmap en README.md](README.md#roadmap)
+Ver [Mapa de Ruta en README.md](README.md#mapa-de-ruta)
 
-Contribuciones alineadas con el roadmap son prioritarias.
+Las contribuciones alineadas con el mapa de ruta tienen prioridad.
 
-## License
+## Licencia
 
-Contribuyendo aceptas que tu código sea licenciado bajo MIT.
+Al contribuir, aceptas que tu código sea licenciado bajo MIT.
 
 ---
 
-## Preguntas?
+## ¿Preguntas?
 
 - 📖 Lee la documentación
-- 💬 Abre una Discussion
+- 💬 Abre una Discusión
 - 🐛 Reporta issues
 - 📧 Contacta a los mantenedores
 
