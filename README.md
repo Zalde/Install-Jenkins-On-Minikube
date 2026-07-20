@@ -8,17 +8,19 @@ Orientada a entrenamiento, laboratorios y preparación para ambientes de producc
 
 ## 📋 Tabla de Contenidos
 
-- [Overview](#overview)
-- [Pre-requisitos](#pre-requisitos)
-- [Instalación Rápida](#instalación-rápida)
-- [Arquitectura](#arquitectura)
-- [Guías Detalladas](#guías-detalladas)
-- [Características](#características)
-- [Comandos Útiles](#comandos-útiles)
-- [Troubleshooting](#troubleshooting)
-- [FAQ](#faq)
-- [Roadmap](#roadmap)
-- [Contribuciones](#contribuciones)
+- [Overview](#-overview)
+- [Pre-requisitos](#️-pre-requisitos)
+- [Instalación Rápida](#-instalación-rápida)
+- [Arquitectura](#-arquitectura)
+- [Guías Detalladas](#-guías-detalladas)
+- [Características](#-características)
+- [Comandos Útiles](#-comandos-útiles)
+- [Troubleshooting](#-troubleshooting)
+- [FAQ](#-faq)
+- [Roadmap](#️-roadmap)
+- [Contribuciones](#-contribuciones)
+- [Recursos](#-recursos)
+- [Licencia](#-licencia)
 
 ---
 
@@ -119,7 +121,7 @@ http://prometheus.local            # Alertas
 
 ### Opción C: Manual (Recomendado para entender detalles)
 
-Ver sección [Guía Manual](#guía-manual-alternativa)
+Ver sección [Paso a Paso Manual](#paso-a-paso-manual-alternativa)
 
 ---
 
@@ -272,7 +274,7 @@ kubectl rollout restart deployment/jenkins -n jenkins
 
 👉 Ver: [`monitoring/README.md`](monitoring/README.md)
 
-### Guía Manual (Alternativa)
+## Paso a Paso Manual (Alternativa)
 
 Si prefieres hacer cada paso manualmente:
 
@@ -693,6 +695,9 @@ Las contribuciones son bienvenidas!
 
 ### Documentación
 
+- 📄 [`CONTRIBUTING.md`](CONTRIBUTING.md) - Cómo contribuir al proyecto
+- 📄 [`SECURITY.md`](SECURITY.md) - Políticas y mejores prácticas de seguridad
+- 📄 [`ARCHITECTURE.md`](ARCHITECTURE.md) - Guía detallada de arquitectura
 - 📄 [`scripts/README.md`](scripts/README.md) - Scripts de automatización
 - 📄 [`jcasc/README.md`](jcasc/README.md) - Jenkins Configuration as Code
 - 📄 [`kustomize/README.md`](kustomize/README.md) - Multi-ambiente con Kustomize
